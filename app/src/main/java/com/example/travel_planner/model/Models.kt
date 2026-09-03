@@ -44,3 +44,30 @@ data class TripPreference(
     val label: String,
     val selected: Boolean = false
 )
+
+
+data class Hotel(
+    val id: String,
+    val name: String,
+    val area: String,
+    val rating: String,
+    val stars: Int,
+    val price: Int,
+    val currency: String,
+    val amenities: String
+)
+
+data class Restaurant(
+    val id: String,
+    val name: String,
+    val cuisine: String,
+    val rating: Double,
+    val priceTier: String
+)
+
+data class Activity(
+    val id: String,
+    val name: String,
+    val duration: String,
+    val price: Int
+)

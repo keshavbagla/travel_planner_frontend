@@ -13,10 +13,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.travel_planner.ui.components.BottomNavBar
+import com.example.travel_planner.ui.screens.ActivitiesScreen
 import com.example.travel_planner.ui.screens.DestinationDetailsScreen
 import com.example.travel_planner.ui.screens.DestinationsScreen
 import com.example.travel_planner.ui.screens.HomeScreen
+import com.example.travel_planner.ui.screens.HotelsScreen
 import com.example.travel_planner.ui.screens.LoginScreen
+import com.example.travel_planner.ui.screens.RestaurantsScreen
 import com.example.travel_planner.ui.screens.SignUpScreen
 import com.example.travel_planner.ui.screens.flights.FlightsScreen
 import com.voyago.app.ui.screens.aiplanner.AiPlannerScreen
@@ -31,6 +34,9 @@ sealed class Destination(val route: String) {
         fun createRoute(destinationId: String) = "destination_details/$destinationId"
     }
     data object Flights : Destination("flights")
+    data object Hotels : Destination("hotels")
+    data object Restaurants : Destination("restaurants")
+    data object Activities : Destination("activities")
 }
 
 // Login and SignUp are standalone auth screens - no bottom nav on them
@@ -92,11 +98,29 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                     DestinationDetailsScreen(
                         destinationId = destinationId,
                         onBackClick = { navController.popBackStack() },
-                        onPlanTripClick = { navigate(Destination.Flights) }
+                        onPlanTripClick = { navigate(Destination.Flights) },
+                        onViewHotelsClick = { navController.navigate(Destination.Hotels.route) },
+                        onViewRestaurantsClick = { navController.navigate(Destination.Restaurants.route) },
+                        onViewActivitiesClick = { navController.navigate(Destination.Activities.route) }
                     )
                 }
                 composable(Destination.Flights.route) {
                     FlightsScreen()
+                }
+                composable(Destination.Hotels.route) {
+                    HotelsScreen(
+                        onSelectHotel = { /* TODO: navigate to a hotel detail screen once one exists */ }
+                    )
+                }
+                composable(Destination.Restaurants.route) {
+                    RestaurantsScreen(
+                        onSelectRestaurant = { /* TODO: navigate to a restaurant detail screen once one exists */ }
+                    )
+                }
+                composable(Destination.Activities.route) {
+                    ActivitiesScreen(
+                        onSelectActivity = { /* TODO: navigate to an activity detail screen once one exists */ }
+                    )
                 }
             }
         }

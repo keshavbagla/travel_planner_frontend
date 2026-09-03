@@ -17,42 +17,76 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.travel_planner.data.TravelRepository
+import com.example.travel_planner.model.Restaurant
 import com.example.travel_planner.ui.theme.*
+import com.example.travel_planner.ui.viewmodel.ResourceViewModel
+import com.example.travel_planner.ui.viewmodel.UiState
 import androidx.compose.ui.tooling.preview.Preview
 
-private data class Restaurant(val name: String, val cuisine: String, val rating: Double, val priceTier: String)
-
-private val sampleRestaurants = listOf(
-    Restaurant("Kichi Coffee & Tea House", "Japanese • Cafe", 4.8, "$$" ),
-    Restaurant("Gion Karyo", "Kaiseki • Fine Dining", 4.9, "$$$$"),
-    Restaurant("Nishiki Warai", "Street Food • Local", 4.6, "$")
-)
-
 @Composable
-fun RestaurantsScreen(onSelectRestaurant: (String) -> Unit = {}) {
+fun RestaurantsScreen(
+    onSelectRestaurant: (String) -> Unit = {},
+    viewModel: ResourceViewModel<List<Restaurant>> = viewModel(
+        factory = viewModelFactory {
+            initializer { ResourceViewModel { TravelRepository.loadRestaurantsUi() } }
+        }
+    )
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Restaurants in Kyoto", fontWeight = FontWeight.Bold, fontSize = 26.sp, color = Navy)
             Text("Curated by Voyago AI based on your taste", style = MaterialTheme.typography.bodySmall, color = Slate , fontSize = 14.sp)
         }
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(sampleRestaurants) { restaurant ->
-                RestaurantCard(restaurant, onClick = { onSelectRestaurant(restaurant.name) })
+
+        when (val state = uiState) {
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text("Couldn't load restaurants: ${state.message}", style = MaterialTheme.typography.bodyMedium, color = Slate)
+                }
+            }
+            is UiState.Success -> {
+                if (state.data.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text("No restaurants found yet.", style = MaterialTheme.typography.bodyMedium, color = Slate)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.data) { restaurant ->
+                            RestaurantCard(restaurant, onClick = { onSelectRestaurant(restaurant.id) })
+                        }
+                    }
+                }
+            }
+
+            else -> {}
         }
     }
 }

@@ -17,29 +17,45 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.travel_planner.data.SampleData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travel_planner.model.Flight
-import com.example.travel_planner.ui.screens.HomeScreen
 import com.example.travel_planner.ui.theme.*
+import com.example.travel_planner.ui.viewmodel.FlightsViewModel
+import com.example.travel_planner.ui.viewmodel.UiState
 
 @Composable
 fun FlightsScreen(
     onSearchClick: () -> Unit = {},
-    onSelectFlight: (Flight) -> Unit = {}
+    onSelectFlight: (Flight) -> Unit = {},
+    viewModel: FlightsViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    var departureIata by remember { mutableStateOf("") }
+    var arrivalIata by remember { mutableStateOf("") }
+    var outboundDate by remember { mutableStateOf("") } // "yyyy-MM-dd"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,15 +85,17 @@ fun FlightsScreen(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    AirportField(
-                        code = "SFO",
-                        city = "San Francisco",
+                    EditableField(
+                        value = departureIata,
+                        onValueChange = { departureIata = it.uppercase() },
+                        placeholder = "From (e.g. DEL)",
                         modifier = Modifier.weight(1f)
                     )
 
-                    AirportField(
-                        code = "KIX",
-                        city = "Kyoto",
+                    EditableField(
+                        value = arrivalIata,
+                        onValueChange = { arrivalIata = it.uppercase() },
+                        placeholder = "To (e.g. CDG)",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -85,13 +103,15 @@ fun FlightsScreen(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    InfoField(
-                        text = "Oct 14 - Oct 21",
+                    EditableField(
+                        value = outboundDate,
+                        onValueChange = { outboundDate = it },
+                        placeholder = "yyyy-MM-dd",
                         modifier = Modifier.weight(1f)
                     )
 
                     InfoField(
-                        text = "2 Pax, Economy",
+                        text = "1 Adult, Economy",
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -104,6 +124,7 @@ fun FlightsScreen(
                     .clip(RoundedCornerShape(19.dp))
                     .background(Coral)
                     .clickable {
+                        viewModel.search(departureIata, arrivalIata, outboundDate)
                         onSearchClick()
                     },
                 contentAlignment = Alignment.Center
@@ -128,8 +149,15 @@ fun FlightsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+            val countLabel = when (val state = uiState) {
+                is UiState.Success -> "${state.data.size} Flight Recommendations"
+                is UiState.Loading -> "Searching..."
+                is UiState.Error -> "Search failed"
+                is UiState.Idle -> "Enter route and search"
+            }
+
             Text(
-                text = "${SampleData.flights.size} Flight Recommendations",
+                text = countLabel,
                 style = MaterialTheme.typography.labelMedium,
                 color = Navy
             )
@@ -154,35 +182,64 @@ fun FlightsScreen(
             }
         }
 
-        // Flight list
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(
-                horizontal = 16.dp,
-                vertical = 4.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-
-            items(SampleData.flights) { flight ->
-
-                FlightCard(
-                    flight = flight,
-                    onSelect = {
-                        onSelectFlight(flight)
+        when (val state = uiState) {
+            is UiState.Idle -> {
+                Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Enter a departure airport, arrival airport, and date above, then tap Search Flights.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Slate
+                    )
+                }
+            }
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Couldn't search flights: ${state.message}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Slate
+                    )
+                }
+            }
+            is UiState.Success -> {
+                if (state.data.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text("No flights found for that route/date.", style = MaterialTheme.typography.bodyMedium, color = Slate)
                     }
-                )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 4.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.data) { flight ->
+                            FlightCard(
+                                flight = flight,
+                                onSelect = { onSelectFlight(flight) }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun AirportField(
-    code: String,
-    city: String,
+private fun EditableField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -193,22 +250,16 @@ private fun AirportField(
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-
-        Row {
-
-            Text(
-                text = code,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = Slate
-            )
-
-            Text(
-                text = " ($city)",
-                style = MaterialTheme.typography.bodySmall,
-                color = Slate
-            )
+        if (value.isEmpty()) {
+            Text(placeholder, style = MaterialTheme.typography.bodySmall, color = Slate)
         }
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 13.sp, color = Navy),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

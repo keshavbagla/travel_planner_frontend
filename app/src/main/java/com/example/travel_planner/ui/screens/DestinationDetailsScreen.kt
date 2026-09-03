@@ -41,7 +41,10 @@ import com.example.travel_planner.ui.theme.*
 fun DestinationDetailsScreen(
     destinationId: String,
     onBackClick: () -> Unit = {},
-    onPlanTripClick: () -> Unit = {}
+    onPlanTripClick: () -> Unit = {},
+    onViewHotelsClick: () -> Unit = {},
+    onViewRestaurantsClick: () -> Unit = {},
+    onViewActivitiesClick: () -> Unit = {}
 ) {
     // TODO: use destinationId to fetch real details from your API instead of SampleData.
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
@@ -95,6 +98,16 @@ fun DestinationDetailsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color =Slate
                     )
+                }
+            }
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    QuickLinkButton(label = "Hotels", onClick = onViewHotelsClick, modifier = Modifier.weight(1f))
+                    QuickLinkButton(label = "Restaurants", onClick = onViewRestaurantsClick, modifier = Modifier.weight(1f))
+                    QuickLinkButton(label = "Activities", onClick = onViewActivitiesClick, modifier = Modifier.weight(1f))
                 }
             }
             item {
@@ -161,6 +174,20 @@ fun DestinationDetailsScreen(
                 Text("Plan Trip Here", color = White, style = MaterialTheme.typography.labelLarge)
             }
         }
+    }
+}
+
+@Composable
+private fun QuickLinkButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(White)
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = Navy, fontWeight = FontWeight.SemiBold)
     }
 }
 

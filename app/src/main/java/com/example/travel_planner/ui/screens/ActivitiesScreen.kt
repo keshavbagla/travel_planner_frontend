@@ -13,40 +13,75 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.travel_planner.data.TravelRepository
+import com.example.travel_planner.model.Activity
 import com.example.travel_planner.ui.theme.*
-
-private data class Activity(val name: String, val duration: String, val price: Int)
-
-private val sampleActivities = listOf(
-    Activity("Arashiyama Bamboo Grove Walking Tour", "2 hours", 45),
-    Activity("Traditional Tea Ceremony Experience", "1.5 hours", 60),
-    Activity("Fushimi Inari Sunrise Hike", "3 hours", 0)
-)
+import com.example.travel_planner.ui.viewmodel.ResourceViewModel
+import com.example.travel_planner.ui.viewmodel.UiState
 
 @Composable
-fun ActivitiesScreen(onSelectActivity: (String) -> Unit = {}) {
+fun ActivitiesScreen(
+    onSelectActivity: (String) -> Unit = {},
+    viewModel: ResourceViewModel<List<Activity>> = viewModel(
+        factory = viewModelFactory {
+            initializer { ResourceViewModel { TravelRepository.loadActivitiesUi() } }
+        }
+    )
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Things to Do in Kyoto", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Navy)
             Text("Hand-picked experiences for your trip", style = MaterialTheme.typography.bodySmall, color = Slate)
         }
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(sampleActivities) { activity ->
-                ActivityCard(activity, onClick = { onSelectActivity(activity.name) })
+
+        when (val state = uiState) {
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text("Couldn't load activities: ${state.message}", style = MaterialTheme.typography.bodyMedium, color = Slate)
+                }
+            }
+            is UiState.Success -> {
+                if (state.data.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text("No activities found yet.", style = MaterialTheme.typography.bodyMedium, color = Slate)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.data) { activity ->
+                            ActivityCard(activity, onClick = { onSelectActivity(activity.id) })
+                        }
+                    }
+                }
+            }
+
+            else -> {}
         }
     }
 }

@@ -15,68 +15,134 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.travel_planner.data.TravelRepository
+import com.example.travel_planner.model.Hotel
 import com.example.travel_planner.ui.theme.*
+import com.example.travel_planner.ui.viewmodel.ResourceViewModel
+import com.example.travel_planner.ui.viewmodel.UiState
 import androidx.compose.ui.tooling.preview.Preview
 
-private data class Hotel(val name: String, val area: String, val rating: String, val stars: Int, val price: Int, val amenities: String)
-
-private val sampleHotels = listOf(
-    Hotel("The Ritz-Carlton, Kyoto", "Kamigyo Ward, Kyoto", "9.4 Wonderful", 5, 450, "Free WiFi • Pool • Spa • Gym"),
-    Hotel("Sowaka Ryokan & Hotel", "Gion District, Kyoto", "9.1 Wonderful", 5, 380, "Free WiFi • Onsen • Restaurant"),
-    Hotel("Hotel Granvia Kyoto", "Downtown Kyoto", "8.7 Excellent", 4, 210, "Free WiFi • Gym • Restaurant")
-)
-
 @Composable
-fun HotelsScreen(onSelectHotel: (String) -> Unit = {}) {
+fun HotelsScreen(
+    onSelectHotel: (String) -> Unit = {},
+    viewModel: ResourceViewModel<List<Hotel>> = viewModel(
+        factory = viewModelFactory {
+            initializer { ResourceViewModel { TravelRepository.loadHotelsUi() } }
+        }
+    )
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(
             modifier = Modifier.fillMaxWidth().background(Navy).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text("Find Hotels", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = White)
-            SearchField(label = "DESTINATION", value = "Kyoto, Japan")
+            EditableSearchField(label = "DESTINATION / HOTEL NAME", value = searchQuery, onValueChange = { searchQuery = it })
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SearchField(label = "CHECK-IN / OUT", value = "Oct 14 - 18", modifier = Modifier.weight(1f))
-                SearchField(label = "GUESTS", value = "2 Adults, 1 Room", modifier = Modifier.weight(1f))
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Coral),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Search Hotels", color = White, style = MaterialTheme.typography.labelLarge)
+                StaticField(label = "CHECK-IN / OUT", value = "Oct 14 - 18", modifier = Modifier.weight(1f))
+                StaticField(label = "GUESTS", value = "2 Adults, 1 Room", modifier = Modifier.weight(1f))
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(sampleHotels) { hotel ->
-                HotelCard(hotel = hotel, onSelect = { onSelectHotel(hotel.name) })
+        when (val state = uiState) {
+            is UiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
+            is UiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Text("Couldn't load hotels: ${state.message}", style = MaterialTheme.typography.bodyMedium, color = Slate)
+                }
+            }
+            is UiState.Success -> {
+                val filtered = if (searchQuery.isBlank()) {
+                    state.data
+                } else {
+                    state.data.filter {
+                        it.name.contains(searchQuery, ignoreCase = true) ||
+                                it.area.contains(searchQuery, ignoreCase = true)
+                    }
+                }
+                if (filtered.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            if (searchQuery.isBlank()) "No hotels found yet." else "No hotels match \"$searchQuery\".",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Slate
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(filtered) { hotel ->
+                            HotelCard(hotel = hotel, onSelect = { onSelectHotel(hotel.id) })
+                        }
+                    }
+                }
+            }
+
+            else -> {}
         }
     }
 }
 
 @Composable
-private fun SearchField(label: String, value: String, modifier: Modifier = Modifier) {
+private fun EditableSearchField(label: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = White.copy(alpha = 0.7f))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(White)
+                .padding(12.dp)
+        ) {
+            if (value.isEmpty()) {
+                Text("e.g. Kyoto, or a hotel name", style = MaterialTheme.typography.bodyMedium, color = Slate)
+            }
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle = TextStyle(fontSize = 14.sp, color = Navy),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun StaticField(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = White.copy(alpha = 0.7f))
         Box(
@@ -123,7 +189,7 @@ private fun HotelCard(hotel: Hotel, onSelect: () -> Unit) {
             Text("  ${hotel.amenities}", style = MaterialTheme.typography.bodySmall, color = Slate)
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("$${hotel.price} / night", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Navy)
+            Text("${hotel.currency} ${hotel.price} / night", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Navy)
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
