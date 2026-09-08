@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,7 @@ import com.example.travel_planner.ui.theme.*
 import com.example.travel_planner.ui.viewmodel.ResourceViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.delay
 
 @Composable
 fun HotelsScreen(
@@ -56,6 +58,16 @@ fun HotelsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+
+    var isFirstLaunch by remember { mutableStateOf(true) }
+    LaunchedEffect(searchQuery) {
+        if (isFirstLaunch) {
+            isFirstLaunch = false
+            return@LaunchedEffect
+        }
+        delay(400)
+        viewModel.refresh { TravelRepository.loadHotelsUi(searchQuery) }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(
@@ -82,15 +94,7 @@ fun HotelsScreen(
                 }
             }
             is UiState.Success -> {
-                val filtered = if (searchQuery.isBlank()) {
-                    state.data
-                } else {
-                    state.data.filter {
-                        it.name.contains(searchQuery, ignoreCase = true) ||
-                                it.area.contains(searchQuery, ignoreCase = true)
-                    }
-                }
-                if (filtered.isEmpty()) {
+                if (state.data.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
                             if (searchQuery.isBlank()) "No hotels found yet." else "No hotels match \"$searchQuery\".",
@@ -104,7 +108,7 @@ fun HotelsScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(filtered) { hotel ->
+                        items(state.data) { hotel ->
                             HotelCard(hotel = hotel, onSelect = { onSelectHotel(hotel.id) })
                         }
                     }

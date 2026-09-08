@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,20 +33,25 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.travel_planner.data.AuthRepository
 import com.example.travel_planner.ui.theme.*
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.travel_planner.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignUpScreen(
     prefilledEmail: String = "",
-    onCreateAccount: (name: String, email: String, password: String) -> Unit = { _, _, _ -> },
+    onAccountCreated: (email: String) -> Unit = {}, // <-- changed: was onCreateAccount(name,email,password), now fires only after a real signup succeeds
     onSignInClick: () -> Unit = {}
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf(prefilledEmail) }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Box(
@@ -75,11 +82,11 @@ fun SignUpScreen(
             Text("Create your account", style = MaterialTheme.typography.headlineMedium, color = Navy)
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LabeledField(label = "Full Name", value = name, onValueChange = { name = it }, placeholder = "Jane Doe")
+                LabeledField(label = "Full Name", value = name, onValueChange = { name = it; errorMessage = null }, placeholder = "Jane Doe")
                 LabeledField(
                     label = "Work Email",
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = { email = it; errorMessage = null },
                     placeholder = "jane@example.com",
                     keyboardType = KeyboardType.Email
                 )
@@ -87,7 +94,7 @@ fun SignUpScreen(
                     Text("Password", style = MaterialTheme.typography.labelLarge, color = Navy)
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { password = it; errorMessage = null },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("••••••••••••") },
                         singleLine = true,
@@ -111,16 +118,53 @@ fun SignUpScreen(
                 }
             }
 
+            errorMessage?.let {
+                Text(it, color = Coral, style = MaterialTheme.typography.bodySmall)
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
                     .clip(RoundedCornerShape(24.dp))
                     .background(Coral)
-                    .clickable { onCreateAccount(name, email, password) },
+                    .clickable(enabled = !isLoading) {
+                        if (name.isBlank() || email.isBlank() || password.isBlank()) {
+                            errorMessage = "Fill in all fields"
+                            return@clickable
+                        }
+                        isLoading = true
+                        scope.launch {
+                            val result = AuthRepository.signUp(name, email, password)
+                            isLoading = false
+                            result.onSuccess {
+                                onAccountCreated(email)
+                            }.onFailure { e ->
+                                val msg = e.message ?: ""
+                                if (msg.contains("409")) {
+                                    onAccountCreated(email)
+                                } else {
+                                    errorMessage = msg.ifBlank { "Couldn't create account. Try again." }
+                                }
+                            }
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                Text("Create Account", color = White, style = MaterialTheme.typography.labelLarge)
+                if (isLoading) {
+                    CircularProgressIndicator(color = White, modifier = Modifier.height(20.dp))
+                } else {
+                    Text("Create Account", color = White, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+
+            if (isLoading) { // <-- added: sets expectations so a slow cold-start isn't mistaken for a hang
+                Text(
+                    "This can take up to 2 minutes on a cold server — please don't close the app or tap again.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Slate,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

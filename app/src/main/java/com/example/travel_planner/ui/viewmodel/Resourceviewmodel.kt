@@ -7,9 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-
 class ResourceViewModel<T>(
-    private val load: suspend () -> T
+    private var load: suspend () -> T // <-- changed: was val, now var so refresh() can swap in a new query
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<T>>(UiState.Loading)
@@ -18,8 +17,8 @@ class ResourceViewModel<T>(
     init {
         refresh()
     }
-
-    fun refresh() {
+    fun refresh(newLoad: (suspend () -> T)? = null) {
+        if (newLoad != null) load = newLoad
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             _uiState.value = try {

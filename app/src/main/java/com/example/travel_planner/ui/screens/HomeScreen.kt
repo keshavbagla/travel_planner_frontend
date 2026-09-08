@@ -13,13 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -27,9 +27,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(
-    onSearchDestination: () -> Unit = {},
+    onSearchDestination: (String) -> Unit = {}, // <-- changed: was () -> Unit, now carries the typed query
     onDestinationClick: (String) -> Unit = {}
 ) {
     Column(
@@ -90,7 +95,7 @@ fun HomeScreen(
             item {
                 HeroSearchCard(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    onGoClick = onSearchDestination
+                    onSearch = onSearchDestination
                 )
             }
 
@@ -111,7 +116,10 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         SampleData.searchChips.forEach { chip ->
-                            VoyagoChip(label = chip)
+                            VoyagoChip(
+                                label = chip,
+                                onClick = { onSearchDestination(chip) } // <-- added: chips were previously inert
+                            )
                         }
                     }
                 }
@@ -126,7 +134,13 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Popular Destinations", style = MaterialTheme.typography.titleMedium, color = Navy , fontSize = 18.sp)
-                        Text("See All", style = MaterialTheme.typography.labelMedium, color = Teal , fontSize = 14.sp)
+                        Text(
+                            "See All",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Teal,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { onSearchDestination("") } // <-- added: was decorative
+                        )
                     }
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 18.dp),
@@ -146,7 +160,9 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeroSearchCard(modifier: Modifier = Modifier, onGoClick: () -> Unit) {
+private fun HeroSearchCard(modifier: Modifier = Modifier, onSearch: (String) -> Unit) {
+    var query by remember { mutableStateOf("") }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -178,17 +194,27 @@ private fun HeroSearchCard(modifier: Modifier = Modifier, onGoClick: () -> Unit)
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Filled.Search, contentDescription = null, tint = Slate, modifier = Modifier.size(16.dp))
-                Text(
-                    "Where do you want to go?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Slate,
-                    modifier = Modifier.weight(1f)
-                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (query.isEmpty()) {
+                        Text(
+                            "Where do you want to go?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Slate
+                        )
+                    }
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 14.sp, color = Navy),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(Coral)
-                        .clickable { onGoClick() }
+                        .clickable { onSearch(query) }
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text(

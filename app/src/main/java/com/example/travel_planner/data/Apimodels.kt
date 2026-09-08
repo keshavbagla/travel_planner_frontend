@@ -16,6 +16,7 @@ data class Pagination(
     @SerializedName("total") val total: Int,
     @SerializedName("totalPages") val totalPages: Int
 )
+
 data class GeoPoint(
     @SerializedName("type") val type: String,
     @SerializedName("coordinates") val coordinates: List<Double>
@@ -24,13 +25,12 @@ data class GeoPoint(
     val latitude: Double? get() = coordinates.getOrNull(1)
 }
 
-
 data class RecommendedDuration(
     @SerializedName("minDays") val minDays: Int? = null,
     @SerializedName("maxDays") val maxDays: Int? = null
 )
 
-data class Destination(
+data class ApiDestination(
     @SerializedName("_id") val id: String,
     @SerializedName("name") val name: String,
     @SerializedName("city") val city: String? = null,
@@ -43,14 +43,14 @@ data class Destination(
     @SerializedName("countryCode") val countryCode: String? = null,
     @SerializedName("placeType") val placeType: String? = null,
     @SerializedName("location") val location: GeoPoint? = null,
-    @SerializedName("primaryAirportIata") val primaryAirportIata: String? = null, // only on details endpoint
+    @SerializedName("primaryAirportIata") val primaryAirportIata: String? = null,
     @SerializedName("currency") val currency: String? = null,
     @SerializedName("visaRequired") val visaRequired: Boolean? = null,
     @SerializedName("isActive") val isActive: Boolean? = null
 )
 
 data class DestinationsData(
-    @SerializedName("destinations") val destinations: List<Destination>,
+    @SerializedName("destinations") val destinations: List<ApiDestination>,
     @SerializedName("pagination") val pagination: Pagination
 )
 
@@ -60,7 +60,7 @@ data class ActivitySchedule(
     @SerializedName("endTime") val endTime: String? = null
 )
 
-data class Activity(
+data class ApiActivity(
     @SerializedName("_id") val id: String,
     @SerializedName("name") val name: String,
     @SerializedName("slug") val slug: String? = null,
@@ -69,7 +69,7 @@ data class Activity(
     @SerializedName("country") val country: String? = null,
     @SerializedName("category") val category: String? = null,
     @SerializedName("duration") val duration: Int? = null,
-    @SerializedName("durationUnit") val durationUnit: String? = null, // e.g. "Hours"
+    @SerializedName("durationUnit") val durationUnit: String? = null,
     @SerializedName("price") val price: Double? = null,
     @SerializedName("currency") val currency: String? = null,
     @SerializedName("difficulty") val difficulty: String? = null,
@@ -78,20 +78,20 @@ data class Activity(
     @SerializedName("minimumParticipants") val minimumParticipants: Int? = null,
     @SerializedName("maximumParticipants") val maximumParticipants: Int? = null,
     @SerializedName("meetingPoint") val meetingPoint: String? = null,
-    @SerializedName("schedule") val schedule: List<ActivitySchedule>? = null, // details endpoint only
-    @SerializedName("included") val included: List<String>? = null,          // details endpoint only
-    @SerializedName("excluded") val excluded: List<String>? = null,          // details endpoint only
-    @SerializedName("bookingUrl") val bookingUrl: String? = null,            // details endpoint only, often null
+    @SerializedName("schedule") val schedule: List<ActivitySchedule>? = null,
+    @SerializedName("included") val included: List<String>? = null,
+    @SerializedName("excluded") val excluded: List<String>? = null,
+    @SerializedName("bookingUrl") val bookingUrl: String? = null,
     @SerializedName("externalProvider") val externalProvider: String? = null,
     @SerializedName("isActive") val isActive: Boolean? = null
 )
 
 data class ActivitiesData(
-    @SerializedName("activities") val activities: List<Activity>,
+    @SerializedName("activities") val activities: List<ApiActivity>,
     @SerializedName("pagination") val pagination: Pagination
 )
 
-data class ExternalActivity(
+data class ApiExternalActivity(
     @SerializedName("name") val name: String,
     @SerializedName("category") val category: String? = null,
     @SerializedName("location") val location: GeoPoint? = null,
@@ -99,16 +99,15 @@ data class ExternalActivity(
     @SerializedName("country") val country: String? = null,
     @SerializedName("price") val price: Double? = null,
     @SerializedName("currency") val currency: String? = null,
-    @SerializedName("source") val source: String? = null // e.g. "Geoapify"
+    @SerializedName("source") val source: String? = null
 )
 
 data class ExternalActivitiesData(
-    @SerializedName("activities") val activities: List<ExternalActivity>,
-    @SerializedName("meta") val meta: JsonElement? = null // shape unspecified in doc ("{}" in example)
+    @SerializedName("activities") val activities: List<ApiExternalActivity>,
+    @SerializedName("meta") val meta: JsonElement? = null
 )
 
-
-data class Restaurant(
+data class ApiRestaurant(
     @SerializedName("_id") val id: String,
     @SerializedName("name") val name: String,
     @SerializedName("destination") val destinationId: String? = null,
@@ -127,18 +126,18 @@ data class Restaurant(
 )
 
 data class RestaurantsData(
-    @SerializedName("restaurants") val restaurants: List<Restaurant>,
+    @SerializedName("restaurants") val restaurants: List<ApiRestaurant>,
     @SerializedName("pagination") val pagination: Pagination
 )
 
-data class Hotel(
+data class ApiHotel(
     @SerializedName("_id") val id: String,
     @SerializedName("name") val name: String,
     @SerializedName("destination") val destinationId: String? = null,
     @SerializedName("city") val city: String? = null,
     @SerializedName("country") val country: String? = null,
     @SerializedName("hotelType") val hotelType: String? = null,
-    @SerializedName("externalProvider") val externalProvider: String? = null, // e.g. "booking"
+    @SerializedName("externalProvider") val externalProvider: String? = null,
     @SerializedName("externalHotelId") val externalHotelId: String? = null,
     @SerializedName("bookingUrl") val bookingUrl: String? = null,
     @SerializedName("starRating") val starRating: Int? = null,
@@ -147,19 +146,19 @@ data class Hotel(
     @SerializedName("pricePerNight") val pricePerNight: Double? = null,
     @SerializedName("currency") val currency: String? = null,
     @SerializedName("amenities") val amenities: List<String>? = null,
-    @SerializedName("roomTypes") val roomTypes: List<JsonElement>? = null, // empty in every example seen so far
+    @SerializedName("roomTypes") val roomTypes: List<JsonElement>? = null,
     @SerializedName("isActive") val isActive: Boolean? = null
 )
 
 data class HotelsData(
-    @SerializedName("hotels") val hotels: List<Hotel>,
+    @SerializedName("hotels") val hotels: List<ApiHotel>,
     @SerializedName("pagination") val pagination: Pagination
 )
 
 data class FlightOfferSearchRequest(
     @SerializedName("departureIata") val departureIata: String,
     @SerializedName("arrivalIata") val arrivalIata: String,
-    @SerializedName("outboundDate") val outboundDate: String, // "yyyy-MM-dd"
+    @SerializedName("outboundDate") val outboundDate: String,
     @SerializedName("adults") val adults: Int,
     @SerializedName("travelClass") val travelClass: String = "ECONOMY",
     @SerializedName("currency") val currency: String = "INR"
@@ -170,29 +169,29 @@ data class FlightLeg(
     @SerializedName("airline") val airline: String? = null
 )
 
-data class FlightOffer(
+data class ApiFlightOffer(
     @SerializedName("_id") val id: String,
     @SerializedName("departureAirport") val departureAirport: String? = null,
     @SerializedName("arrivalAirport") val arrivalAirport: String? = null,
-    @SerializedName("departureTime") val departureTime: String? = null, // ISO 8601
-    @SerializedName("arrivalTime") val arrivalTime: String? = null,     // ISO 8601
+    @SerializedName("departureTime") val departureTime: String? = null,
+    @SerializedName("arrivalTime") val arrivalTime: String? = null,
     @SerializedName("durationMinutes") val durationMinutes: Int? = null,
     @SerializedName("durationText") val durationText: String? = null,
     @SerializedName("stops") val stops: Int? = null,
     @SerializedName("price") val price: Double? = null,
     @SerializedName("currency") val currency: String? = null,
     @SerializedName("flights") val flights: List<FlightLeg>? = null,
-    @SerializedName("expiresAt") val expiresAt: String? = null, // check before using — offers are time-sensitive
+    @SerializedName("expiresAt") val expiresAt: String? = null,
     @SerializedName("isSelected") val isSelected: Boolean? = null,
     @SerializedName("isActive") val isActive: Boolean? = null,
-    @SerializedName("provider") val provider: String? = null,   // present on the /select response
-    @SerializedName("searchId") val searchId: String? = null    // present on the /select response
+    @SerializedName("provider") val provider: String? = null,
+    @SerializedName("searchId") val searchId: String? = null
 )
 
 data class FlightOfferSearchData(
     @SerializedName("searchId") val searchId: String,
     @SerializedName("provider") val provider: String? = null,
-    @SerializedName("offers") val offers: List<FlightOffer>,
+    @SerializedName("offers") val offers: List<ApiFlightOffer>,
     @SerializedName("totalOffers") val totalOffers: Int
 )
 
@@ -232,9 +231,10 @@ data class CreateBookingRequest(
     @SerializedName("currency") val currency: String,
     @SerializedName("guestDetails") val guestDetails: GuestDetails,
     @SerializedName("travelers") val travelers: Travelers,
-    @SerializedName("startDate") val startDate: String // "yyyy-MM-dd"
+    @SerializedName("startDate") val startDate: String
 )
-data class Booking(
+
+data class ApiBooking(
     @SerializedName("_id") val id: String,
     @SerializedName("bookingReference") val bookingReference: String? = null,
     @SerializedName("type") val type: String? = null,
@@ -255,7 +255,7 @@ data class Booking(
 )
 
 data class BookingsListData(
-    @SerializedName("bookings") val bookings: List<Booking>,
+    @SerializedName("bookings") val bookings: List<ApiBooking>,
     @SerializedName("pagination") val pagination: Pagination
 )
 

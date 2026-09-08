@@ -19,17 +19,26 @@ import com.example.travel_planner.ui.screens.DestinationsScreen
 import com.example.travel_planner.ui.screens.HomeScreen
 import com.example.travel_planner.ui.screens.HotelsScreen
 import com.example.travel_planner.ui.screens.LoginScreen
+import com.example.travel_planner.ui.screens.OtpVerificationScreen
 import com.example.travel_planner.ui.screens.RestaurantsScreen
 import com.example.travel_planner.ui.screens.SignUpScreen
 import com.example.travel_planner.ui.screens.flights.FlightsScreen
 import com.voyago.app.ui.screens.aiplanner.AiPlannerScreen
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 sealed class Destination(val route: String) {
     data object Login : Destination("login")
     data object Home : Destination("home")
     data object SignUp : Destination("sign_up")
+    data object Otp : Destination("otp/{email}") {
+        fun createRoute(email: String) = "otp/${URLEncoder.encode(email, "UTF-8")}"
+    }
     data object AiPlanner : Destination("ai_planner")
     data object Destinations : Destination("destinations")
+    data object DestinationsSearch : Destination("destinations_search/{query}") {
+        fun createRoute(query: String) = "destinations_search/${URLEncoder.encode(query, "UTF-8")}"
+    }
     data object DestinationDetails : Destination("destination_details/{destinationId}") {
         fun createRoute(destinationId: String) = "destination_details/$destinationId"
     }
@@ -39,7 +48,6 @@ sealed class Destination(val route: String) {
     data object Activities : Destination("activities")
 }
 
-// Login and SignUp are standalone auth screens - no bottom nav on them
 private val bottomNavRoutes = setOf(
     Destination.Home.route,
     Destination.Destinations.route,
@@ -66,18 +74,48 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 composable(Destination.Login.route) {
                     LoginScreen(
                         onLoginSuccess = { navigate(Destination.Home) },
-                        onSignUpClick = { navController.navigate(Destination.SignUp.route) }
+                        onSignUpClick = { navController.navigate(Destination.SignUp.route) },
+                        onNeedsVerification = { email -> // <-- added
+                            navController.navigate(Destination.Otp.createRoute(email))
+                        }
                     )
                 }
                 composable(Destination.SignUp.route) {
                     SignUpScreen(
-                        onCreateAccount = { _, _, _ -> navigate(Destination.Home) },
+                        onAccountCreated = { email ->
+                            // <-- changed: was navigate(Home) directly with no signup call at all.
+                            // Now routes to the real OTP screen after AuthRepository.signUp() succeeds.
+                            navController.navigate(Destination.Otp.createRoute(email))
+                        },
                         onSignInClick = { navController.popBackStack() }
+                    )
+                }
+                composable(Destination.Otp.route) { backStackEntry ->
+                    val email = backStackEntry.arguments?.getString("email")
+                        ?.let { URLDecoder.decode(it, "UTF-8") }
+                        .orEmpty()
+                    OtpVerificationScreen(
+                        email = email,
+                        onVerified = {
+                            // <-- changed: verify-otp does NOT return a token (confirmed by the
+                            // API doc), so the user is verified server-side but not logged in on
+                            // this device yet. Send them to Login to complete sign-in, not Home.
+                            navController.navigate(Destination.Login.route) {
+                                popUpTo(Destination.Login.route) { inclusive = true }
+                            }
+                        }
                     )
                 }
                 composable(Destination.Home.route) {
                     HomeScreen(
-                        onSearchDestination = { navigate(Destination.Destinations) },
+                        onSearchDestination = { query ->
+                            // <-- changed: was () -> Unit ignoring input; now routes with the typed query
+                            if (query.isBlank()) {
+                                navigate(Destination.Destinations)
+                            } else {
+                                navController.navigate(Destination.DestinationsSearch.createRoute(query))
+                            }
+                        },
                         onDestinationClick = { destinationId ->
                             navController.navigate(Destination.DestinationDetails.createRoute(destinationId))
                         }
@@ -88,6 +126,17 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 }
                 composable(Destination.Destinations.route) {
                     DestinationsScreen(
+                        onDestinationClick = { destinationId ->
+                            navController.navigate(Destination.DestinationDetails.createRoute(destinationId))
+                        }
+                    )
+                }
+                composable(Destination.DestinationsSearch.route) { backStackEntry -> // <-- added
+                    val query = backStackEntry.arguments?.getString("query")
+                        ?.let { URLDecoder.decode(it, "UTF-8") }
+                        .orEmpty()
+                    DestinationsScreen(
+                        initialQuery = query,
                         onDestinationClick = { destinationId ->
                             navController.navigate(Destination.DestinationDetails.createRoute(destinationId))
                         }

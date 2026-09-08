@@ -44,10 +44,12 @@ import androidx.compose.ui.tooling.preview.Preview
 fun LoginScreen(
     prefilledEmail: String = "",
     onLoginSuccess: () -> Unit = {},
-    onSignUpClick: () -> Unit = {}
+    onSignUpClick: () -> Unit = {},
+    onNeedsVerification: (email: String) -> Unit = {} // <-- added: escape hatch for the 403 case
 ) {
     var email by remember { mutableStateOf(prefilledEmail) }
     var password by remember { mutableStateOf("") }
+    var needsVerification by remember { mutableStateOf(false) } // <-- added
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -123,6 +125,17 @@ fun LoginScreen(
         errorMessage?.let {
             Text(it, color = Coral, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp))
         }
+        if (needsVerification) { // <-- added
+            Text(
+                "Verify now",
+                color = Teal,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable { onNeedsVerification(email) }
+            )
+        }
 
         Box(
             modifier = Modifier
@@ -141,7 +154,16 @@ fun LoginScreen(
                         val result = AuthRepository.login(email, password)
                         isLoading = false
                         result.onSuccess { onLoginSuccess() }
-                            .onFailure { errorMessage = "Incorrect email or password" }
+                            .onFailure { e ->
+                                val msg = e.message ?: ""
+                                needsVerification = msg.contains("403")
+                                errorMessage = when {
+                                    msg.contains("403") -> "This account hasn't been verified yet."
+                                    msg.contains("401") -> "Incorrect email or password."
+                                    msg.contains("404") -> "No account found with this email."
+                                    else -> msg.ifBlank { "Something went wrong. Please try again." }
+                                }
+                            }
                     }
                 },
             contentAlignment = Alignment.Center

@@ -1,7 +1,6 @@
 package com.example.travel_planner.data
 
 import android.content.Context
-import com.example.travel_planner.data.Apiservice
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -10,10 +9,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-
 object RetrofitClient {
-    private const val ROOT_URL = "https://ai-travel-planer-mgpb.onrender.com/"
-    private const val API_URL = "https://ai-travel-planer-mgpb.onrender.com/api/v1/"
+    private const val BASE_URL = "https://ai-travel-planer-mgpb.onrender.com/api/v1/"
 
     private var tokenStore: TokenStore? = null
 
@@ -37,29 +34,22 @@ object RetrofitClient {
         OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor { tokenStore?.getToken() })
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(60, TimeUnit.SECONDS) // Render free tier cold-starts can be slow
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(150, TimeUnit.SECONDS) // <-- increased again: confirmed cold-start + OTP email dispatch can take ~2 min
+            .readTimeout(150, TimeUnit.SECONDS)
+            .writeTimeout(150, TimeUnit.SECONDS)
             .build()
     }
 
-    val authApi: AuthApi by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl(ROOT_URL)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(AuthApi::class.java)
     }
 
-    val apiService: Apiservice by lazy {
-        Retrofit.Builder()
-            .baseUrl(API_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(Apiservice::class.java)
-    }
+    val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }
+    val apiService: ApiService by lazy { retrofit.create(ApiService::class.java) }
 }
 
 private class AuthInterceptor(private val tokenProvider: () -> String?) : Interceptor {

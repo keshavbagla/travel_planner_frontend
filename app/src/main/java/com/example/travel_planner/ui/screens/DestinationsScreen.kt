@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import com.example.travel_planner.model.Destination
 import com.example.travel_planner.ui.theme.*
 import com.example.travel_planner.ui.viewmodel.ResourceViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -58,12 +60,25 @@ fun DestinationsScreen(
     initialQuery: String = "",
     viewModel: ResourceViewModel<List<Destination>> = viewModel(
         factory = viewModelFactory {
-            initializer { ResourceViewModel { TravelRepository.loadDestinationsUi() } }
+            initializer { ResourceViewModel { TravelRepository.loadDestinationsUi(initialQuery) } }
         }
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf(initialQuery) }
+
+    // <-- changed: was client-side filtering of an already-fetched list.
+    // Now debounces typing and re-queries the real backend search
+    // (confirmed supported: GET /destinations?search=...).
+    var isFirstLaunch by remember { mutableStateOf(true) }
+    LaunchedEffect(searchQuery) {
+        if (isFirstLaunch) {
+            isFirstLaunch = false // skip re-querying on initial composition; ResourceViewModel's init{} already loaded it
+            return@LaunchedEffect
+        }
+        delay(400) // debounce so we don't fire a request per keystroke
+        viewModel.refresh { TravelRepository.loadDestinationsUi(searchQuery) }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(
@@ -129,16 +144,7 @@ fun DestinationsScreen(
                 }
             }
             is UiState.Success -> {
-                val filtered = if (searchQuery.isBlank()) {
-                    state.data
-                } else {
-                    state.data.filter {
-                        it.name.contains(searchQuery, ignoreCase = true) ||
-                                it.country.contains(searchQuery, ignoreCase = true) ||
-                                it.description.contains(searchQuery, ignoreCase = true)
-                    }
-                }
-                if (filtered.isEmpty()) {
+                if (state.data.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
                             if (searchQuery.isBlank()) "No destinations found yet." else "No destinations match \"$searchQuery\".",
@@ -151,7 +157,7 @@ fun DestinationsScreen(
                         modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(filtered) { destination ->
+                        items(state.data) { destination ->
                             DestinationStackCard(destination = destination, onClick = { onDestinationClick(destination.id) })
                         }
                     }

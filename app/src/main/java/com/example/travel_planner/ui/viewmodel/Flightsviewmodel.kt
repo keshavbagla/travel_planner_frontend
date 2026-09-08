@@ -16,8 +16,13 @@ class FlightsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<UiState<List<Flight>>>(UiState.Idle)
     val uiState: StateFlow<UiState<List<Flight>>> = _uiState.asStateFlow()
 
-
-    fun search(departureIata: String, arrivalIata: String, outboundDate: String, adults: Int = 1) {
+    fun search(
+        departureIata: String,
+        arrivalIata: String,
+        outboundDate: String,
+        adults: Int = 1,
+        travelClass: String = "ECONOMY" // <-- added
+    ) {
         if (departureIata.isBlank() || arrivalIata.isBlank() || outboundDate.isBlank()) {
             _uiState.value = UiState.Error("Enter departure, arrival, and date first")
             return
@@ -30,7 +35,8 @@ class FlightsViewModel : ViewModel() {
                         departureIata = departureIata.trim().uppercase(),
                         arrivalIata = arrivalIata.trim().uppercase(),
                         outboundDate = outboundDate.trim(),
-                        adults = adults
+                        adults = adults,
+                        travelClass = travelClass
                     )
                 )
                 UiState.Success(result.offers.map { it.toUiModel() })
