@@ -46,7 +46,8 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(
-    onSearchDestination: (String) -> Unit = {}, // <-- changed: was () -> Unit, now carries the typed query
+    onSearchDestination: (String) -> Unit = {},
+    onCategoryClick: (String) -> Unit = {},
     onDestinationClick: (String) -> Unit = {}
 ) {
     Column(
@@ -118,7 +119,7 @@ fun HomeScreen(
                         SampleData.searchChips.forEach { chip ->
                             VoyagoChip(
                                 label = chip,
-                                onClick = { onSearchDestination(chip) } // <-- added: chips were previously inert
+                                onClick = { onCategoryClick(chip) }
                             )
                         }
                     }
@@ -139,7 +140,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.labelMedium,
                             color = Teal,
                             fontSize = 14.sp,
-                            modifier = Modifier.clickable { onSearchDestination("") } // <-- added: was decorative
+                            modifier = Modifier.clickable { onSearchDestination("") }
                         )
                     }
                     LazyRow(

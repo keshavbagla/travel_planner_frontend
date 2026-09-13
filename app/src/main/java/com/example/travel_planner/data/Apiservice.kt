@@ -1,5 +1,8 @@
 package com.example.travel_planner.data
 
+import com.example.travel_planner.dat.ApiTrip
+import com.example.travel_planner.dat.CreateTripRequest
+import com.google.gson.JsonElement
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -7,7 +10,9 @@ interface ApiService {
 
     @GET("destinations")
     suspend fun getDestinations(
-        @Query("search") search: String? = null
+        @Query("search") search: String? = null,
+        @Query("destinationType") destinationType: String? = null,
+        @Query("country") country: String? = null
     ): Response<ApiResponse<DestinationsData>>
 
     @GET("destinations/{destinationId}")
@@ -16,7 +21,9 @@ interface ApiService {
     ): Response<ApiResponse<ApiDestination>>
 
     @GET("activities")
-    suspend fun getActivities(): Response<ApiResponse<ActivitiesData>>
+    suspend fun getActivities(
+        @Query("destination") destinationId: String? = null
+    ): Response<ApiResponse<ActivitiesData>>
 
     @GET("activities/{activityId}")
     suspend fun getActivityById(
@@ -29,11 +36,14 @@ interface ApiService {
     ): Response<ApiResponse<ExternalActivitiesData>>
 
     @GET("restaurants")
-    suspend fun getRestaurants(): Response<ApiResponse<RestaurantsData>>
+    suspend fun getRestaurants(
+        @Query("destination") destinationId: String? = null
+    ): Response<ApiResponse<RestaurantsData>>
 
     @GET("hotels")
     suspend fun getHotels(
-        @Query("search") search: String? = null
+        @Query("search") search: String? = null,
+        @Query("destination") destinationId: String? = null
     ): Response<ApiResponse<HotelsData>>
 
     @GET("hotels/{hotelId}")
@@ -83,4 +93,19 @@ interface ApiService {
     suspend fun filterBookings(
         @QueryMap filters: Map<String, String>
     ): Response<ApiResponse<List<ApiBooking>>>
+
+
+
+    @POST("trips")
+    suspend fun createTrip(
+        @Body request: CreateTripRequest
+    ): Response<ApiResponse<ApiTrip>>
+
+    @GET("trips")
+    suspend fun getTrips(): Response<ApiResponse<JsonElement>>
+
+    @GET("trips/{tripId}")
+    suspend fun getTripById(
+        @Path("tripId") tripId: String
+    ): Response<ApiResponse<ApiTrip>>
 }

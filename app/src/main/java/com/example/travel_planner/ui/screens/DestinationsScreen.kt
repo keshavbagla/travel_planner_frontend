@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,26 +60,25 @@ import kotlinx.coroutines.delay
 fun DestinationsScreen(
     onDestinationClick: (String) -> Unit = {},
     initialQuery: String = "",
+    initialDestinationType: String = "",
     viewModel: ResourceViewModel<List<Destination>> = viewModel(
         factory = viewModelFactory {
-            initializer { ResourceViewModel { TravelRepository.loadDestinationsUi(initialQuery) } }
+            initializer { ResourceViewModel { TravelRepository.loadDestinationsUi(initialQuery, initialDestinationType) } }
         }
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf(initialQuery) }
+    var selectedType by remember { mutableStateOf(initialDestinationType) }
 
-    // <-- changed: was client-side filtering of an already-fetched list.
-    // Now debounces typing and re-queries the real backend search
-    // (confirmed supported: GET /destinations?search=...).
     var isFirstLaunch by remember { mutableStateOf(true) }
-    LaunchedEffect(searchQuery) {
+    LaunchedEffect(searchQuery, selectedType) {
         if (isFirstLaunch) {
-            isFirstLaunch = false // skip re-querying on initial composition; ResourceViewModel's init{} already loaded it
+            isFirstLaunch = false
             return@LaunchedEffect
         }
-        delay(400) // debounce so we don't fire a request per keystroke
-        viewModel.refresh { TravelRepository.loadDestinationsUi(searchQuery) }
+        delay(400)
+        viewModel.refresh { TravelRepository.loadDestinationsUi(searchQuery, selectedType) }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Background)) {
@@ -122,9 +123,10 @@ fun DestinationsScreen(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("Region", "Budget Tier", "Season", "Trip Type").forEach { filter ->
+                listOf("Region", "Budget Tier", "Season").forEach { filter ->
                     FilterPill(filter)
                 }
+                TripTypeFilterPill(selected = selectedType, onSelect = { selectedType = it })
             }
         }
 
@@ -147,7 +149,13 @@ fun DestinationsScreen(
                 if (state.data.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            if (searchQuery.isBlank()) "No destinations found yet." else "No destinations match \"$searchQuery\".",
+                            when {
+                                searchQuery.isNotBlank() && selectedType.isNotBlank() ->
+                                    "No \"$selectedType\" destinations match \"$searchQuery\"."
+                                searchQuery.isNotBlank() -> "No destinations match \"$searchQuery\"."
+                                selectedType.isNotBlank() -> "No \"$selectedType\" destinations found."
+                                else -> "No destinations found yet."
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = Slate
                         )
@@ -182,6 +190,35 @@ private fun FilterPill(label: String) {
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Navy)
         Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint =Navy, modifier = Modifier.size(14.dp))
+    }
+}
+val DESTINATION_TYPES = listOf("Beach", "Mountains", "City", "Adventure", "Cultural")
+
+@Composable
+private fun TripTypeFilterPill(selected: String, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(if (selected.isNotBlank()) TealTint else White)
+                .border(1.dp, if (selected.isNotBlank()) Teal else Border, RoundedCornerShape(16.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(selected.ifBlank { "Trip Type" }, style = MaterialTheme.typography.bodyMedium, color = Navy)
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = Navy, modifier = Modifier.size(14.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            if (selected.isNotBlank()) {
+                DropdownMenuItem(text = { Text("All (clear filter)") }, onClick = { onSelect(""); expanded = false })
+            }
+            DESTINATION_TYPES.forEach { type ->
+                DropdownMenuItem(text = { Text(type) }, onClick = { onSelect(type); expanded = false })
+            }
+        }
     }
 }
 

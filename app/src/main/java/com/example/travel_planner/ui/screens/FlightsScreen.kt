@@ -184,7 +184,7 @@ fun FlightsScreen(
             is UiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        "Couldn't search flights: ${state.message}" +
+                        "Couldn't search flights: {state.message}" +
                                 if (state.message.contains("401")) "\n\nThis usually means you're not logged in — the flight search endpoint requires a valid session." else "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Slate
