@@ -109,4 +109,19 @@ interface ApiService {
     suspend fun getTripById(
         @Path("tripId") tripId: String
     ): Response<ApiResponse<ApiTrip>>
+
+    @GET("hotels/search-external")
+    suspend fun searchExternalHotels(
+        @Query("destinationId") destinationId: String,
+        @Query("checkIn") checkIn: String,
+        @Query("checkOut") checkOut: String,
+        @Query("adults") adults: Int = 2,
+        @Query("limit") limit: Int = 10
+    ): Response<ApiResponse<ExternalHotelsData>>
+
+    @GET("restaurants/search-external")
+    suspend fun searchExternalRestaurants(
+        @Query("destinationId") destinationId: String,
+        @Query("limit") limit: Int = 20
+    ): Response<ApiResponse<ExternalRestaurantsData>>
 }

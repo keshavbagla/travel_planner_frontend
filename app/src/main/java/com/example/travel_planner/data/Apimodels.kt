@@ -56,10 +56,6 @@ data class DestinationsData(
     @SerializedName("pagination") val pagination: Pagination
 )
 
-// ============================================================
-// Activities
-// ============================================================
-
 data class ActivitySchedule(
     @SerializedName("day") val day: String? = null,
     @SerializedName("startTime") val startTime: String? = null,
@@ -98,19 +94,55 @@ data class ActivitiesData(
 )
 
 data class ApiExternalActivity(
-    @SerializedName("name") val name: String,
-    @SerializedName("category") val category: String? = null,
-    @SerializedName("location") val location: GeoPoint? = null,
-    @SerializedName("city") val city: String? = null,
-    @SerializedName("country") val country: String? = null,
-    @SerializedName("price") val price: Double? = null,
-    @SerializedName("currency") val currency: String? = null,
-    @SerializedName("source") val source: String? = null
+    @SerializedName("geoapifyPlaceId")
+    val geoapifyPlaceId: String? = null,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("description")
+    val description: String? = null,
+
+    @SerializedName("address")
+    val address: String? = null,
+
+    @SerializedName("category")
+    val category: String? = null,
+
+    @SerializedName("location")
+    val location: GeoPoint? = null,
+
+    @SerializedName("city")
+    val city: String? = null,
+
+    @SerializedName("state")
+    val state: String? = null,
+
+    @SerializedName("country")
+    val country: String? = null,
+
+    @SerializedName("price")
+    val price: Double? = null,
+
+    @SerializedName("currency")
+    val currency: String? = null,
+
+    @SerializedName("duration")
+    val duration: Int? = null,
+
+    @SerializedName("durationUnit")
+    val durationUnit: String? = null,
+
+    @SerializedName("meetingPoint")
+    val meetingPoint: String? = null
 )
 
 data class ExternalActivitiesData(
-    @SerializedName("activities") val activities: List<ApiExternalActivity>,
-    @SerializedName("meta") val meta: JsonElement? = null
+    @SerializedName("activities")
+    val activities: List<ApiExternalActivity> = emptyList(),
+
+    @SerializedName("meta")
+    val meta: JsonElement? = null
 )
 data class ApiRestaurant(
     @SerializedName("_id") val id: String,
@@ -310,4 +342,61 @@ data class TripsListData(
 data class DestinationSearchData(
     @SerializedName("source") val source: String? = null,
     @SerializedName("results") val results: List<ApiDestination> = emptyList()
+)
+
+data class ExternalHotelsData(
+    @SerializedName("hotels")
+    val hotels: List<ApiHotel> = emptyList(),
+
+    @SerializedName("meta")
+    val meta: JsonElement? = null,
+
+    @SerializedName("message")
+    val message: String? = null
+)
+
+data class ApiExternalRestaurant(
+    @SerializedName("geoapifyPlaceId")
+    val geoapifyPlaceId: String? = null,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("description")
+    val description: String? = null,
+
+    @SerializedName("address")
+    val address: String? = null,
+
+    @SerializedName("city")
+    val city: String? = null,
+
+    @SerializedName("state")
+    val state: String? = null,
+
+    @SerializedName("country")
+    val country: String? = null,
+
+    @SerializedName("cuisine")
+    val cuisine: List<String>? = null,
+
+    @SerializedName("averageCostForTwo")
+    val averageCostForTwo: Double? = null,
+
+    @SerializedName("currency")
+    val currency: String? = null,
+
+    @SerializedName("averageRating")
+    val averageRating: Double? = null,
+
+    @SerializedName("reviewCount")
+    val reviewCount: Int? = null,
+
+    @SerializedName("tableReservation")
+    val tableReservation: Boolean? = null
+)
+
+data class ExternalRestaurantsData(
+    @SerializedName("restaurants")
+    val restaurants: List<ApiExternalRestaurant> = emptyList()
 )
