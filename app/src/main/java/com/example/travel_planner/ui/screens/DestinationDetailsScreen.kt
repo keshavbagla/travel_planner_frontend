@@ -54,7 +54,6 @@ fun DestinationDetailsScreen(
     onViewHotelsClick: () -> Unit = {},
     onViewRestaurantsClick: () -> Unit = {},
     onViewActivitiesClick: () -> Unit = {},
-
     detailsViewModel: ResourceViewModel<Destination> = viewModel(
         key = "destinationDetails-$destinationId",
         factory = viewModelFactory {
@@ -73,6 +72,7 @@ fun DestinationDetailsScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         when (val state = detailsState) {
+            is UiState.Idle -> {}
             is UiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -130,8 +130,12 @@ fun DestinationDetailsScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    Icon(Icons.Filled.Star, contentDescription = null, tint = Teal, modifier = Modifier.size(12.dp))
-                                    Text("${destination.rating}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Navy)
+                                    if (destination.rating > 0.0) { // <-- changed: don't show "0.0★" for genuinely unrated destinations
+                                        Icon(Icons.Filled.Star, contentDescription = null, tint = Teal, modifier = Modifier.size(12.dp))
+                                        Text("${destination.rating}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Navy)
+                                    } else {
+                                        Text("New", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Navy)
+                                    }
                                 }
                             }
                             Text(
@@ -139,6 +143,23 @@ fun DestinationDetailsScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Slate
                             )
+                            // <-- added: surfaces real fields (recommended duration, nearest
+                            // airport, famous-for tags) that were fetched but never shown before
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                destination.recommendedDurationText?.let {
+                                    Text("🗓 $it", style = MaterialTheme.typography.bodySmall, color = Slate)
+                                }
+                                destination.primaryAirportIata?.let {
+                                    Text("✈ $it", style = MaterialTheme.typography.bodySmall, color = Slate)
+                                }
+                            }
+                            if (destination.famousFor.isNotEmpty()) {
+                                Text(
+                                    "Famous for: ${destination.famousFor.joinToString(", ")}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Slate
+                                )
+                            }
                         }
                     }
 
@@ -193,6 +214,7 @@ fun DestinationDetailsScreen(
                             }
                         }
                     }
+
                 }
 
                 Row(
@@ -219,8 +241,6 @@ fun DestinationDetailsScreen(
                     }
                 }
             }
-
-            else -> {}
         }
     }
 }

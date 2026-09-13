@@ -7,7 +7,10 @@ data class Destination(
     val rating: Double,
     val priceTier: String,
     val imageUrl: String?,
-    val description: String = ""
+    val description: String = "",
+    val primaryAirportIata: String? = null,
+    val recommendedDurationText: String? = null,
+    val famousFor: List<String> = emptyList()
 )
 
 data class Attraction(
@@ -44,7 +47,6 @@ data class TripPreference(
     val label: String,
     val selected: Boolean = false
 )
-
 
 data class Hotel(
     val id: String,

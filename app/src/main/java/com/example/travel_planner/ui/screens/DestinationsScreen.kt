@@ -60,7 +60,7 @@ import kotlinx.coroutines.delay
 fun DestinationsScreen(
     onDestinationClick: (String) -> Unit = {},
     initialQuery: String = "",
-    initialDestinationType: String = "",
+    initialDestinationType: String = "", // <-- added
     viewModel: ResourceViewModel<List<Destination>> = viewModel(
         factory = viewModelFactory {
             initializer { ResourceViewModel { TravelRepository.loadDestinationsUi(initialQuery, initialDestinationType) } }
@@ -261,8 +261,12 @@ private fun DestinationStackCard(destination: Destination, onClick: () -> Unit) 
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Filled.Star, contentDescription = null, tint = White, modifier = Modifier.size(12.dp))
-                    Text("${destination.rating}", color = White, style = MaterialTheme.typography.labelMedium)
+                    if (destination.rating > 0.0) { // <-- changed: don't show "0.0★" for genuinely unrated destinations
+                        Icon(Icons.Filled.Star, contentDescription = null, tint = White, modifier = Modifier.size(12.dp))
+                        Text("${destination.rating}", color = White, style = MaterialTheme.typography.labelMedium)
+                    } else {
+                        Text("New", color = White, style = MaterialTheme.typography.labelMedium)
+                    }
                 }
                 Box(
                     modifier = Modifier
