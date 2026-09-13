@@ -1,7 +1,5 @@
 package com.example.travel_planner.data
 
-import com.example.travel_planner.dat.ApiTrip
-import com.example.travel_planner.dat.CreateTripRequest
 import com.google.gson.JsonElement
 import retrofit2.Response
 import retrofit2.http.*
@@ -10,10 +8,14 @@ interface ApiService {
 
     @GET("destinations")
     suspend fun getDestinations(
-        @Query("search") search: String? = null,
         @Query("destinationType") destinationType: String? = null,
         @Query("country") country: String? = null
     ): Response<ApiResponse<DestinationsData>>
+
+    @GET("destinations/search")
+    suspend fun searchDestinations(
+        @Query("keyword") keyword: String
+    ): Response<ApiResponse<DestinationSearchData>>
 
     @GET("destinations/{destinationId}")
     suspend fun getDestinationById(
@@ -93,7 +95,6 @@ interface ApiService {
     suspend fun filterBookings(
         @QueryMap filters: Map<String, String>
     ): Response<ApiResponse<List<ApiBooking>>>
-
 
 
     @POST("trips")

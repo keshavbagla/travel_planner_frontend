@@ -1,5 +1,6 @@
 package com.example.travel_planner.data
 
+
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
 
@@ -24,6 +25,7 @@ data class GeoPoint(
     val longitude: Double? get() = coordinates.getOrNull(0)
     val latitude: Double? get() = coordinates.getOrNull(1)
 }
+
 
 data class RecommendedDuration(
     @SerializedName("minDays") val minDays: Int? = null,
@@ -53,6 +55,10 @@ data class DestinationsData(
     @SerializedName("destinations") val destinations: List<ApiDestination>,
     @SerializedName("pagination") val pagination: Pagination
 )
+
+// ============================================================
+// Activities
+// ============================================================
 
 data class ActivitySchedule(
     @SerializedName("day") val day: String? = null,
@@ -106,7 +112,6 @@ data class ExternalActivitiesData(
     @SerializedName("activities") val activities: List<ApiExternalActivity>,
     @SerializedName("meta") val meta: JsonElement? = null
 )
-
 data class ApiRestaurant(
     @SerializedName("_id") val id: String,
     @SerializedName("name") val name: String,
@@ -129,6 +134,7 @@ data class RestaurantsData(
     @SerializedName("restaurants") val restaurants: List<ApiRestaurant>,
     @SerializedName("pagination") val pagination: Pagination
 )
+
 
 data class ApiHotel(
     @SerializedName("_id") val id: String,
@@ -154,6 +160,7 @@ data class HotelsData(
     @SerializedName("hotels") val hotels: List<ApiHotel>,
     @SerializedName("pagination") val pagination: Pagination
 )
+
 
 data class FlightOfferSearchRequest(
     @SerializedName("departureIata") val departureIata: String,
@@ -204,6 +211,7 @@ data class FlightBookingUrlData(
     @SerializedName("timestamp") val timestamp: String? = null,
     @SerializedName("bookingUrl") val bookingUrl: String? = null
 )
+
 
 data class GuestDetails(
     @SerializedName("firstName") val firstName: String,
@@ -266,4 +274,40 @@ data class BookingRedirectData(
     @SerializedName("status") val status: String? = null,
     @SerializedName("bookingUrl") val bookingUrl: String? = null,
     @SerializedName("redirectedAt") val redirectedAt: String? = null
+)
+
+data class CreateTripRequest(
+    @SerializedName("tripName") val tripName: String,
+    @SerializedName("destination") val destinationId: String,
+    @SerializedName("startDate") val startDate: String, // "yyyy-MM-dd"
+    @SerializedName("endDate") val endDate: String,     // "yyyy-MM-dd", must be after startDate
+    @SerializedName("travelers") val travelers: Travelers? = null,
+    @SerializedName("budget") val budget: Map<String, String>? = null,
+    @SerializedName("preferences") val preferences: Map<String, String>? = null,
+    @SerializedName("restaurants") val restaurants: List<String> = emptyList(),
+    @SerializedName("activities") val activities: List<String> = emptyList(),
+    @SerializedName("itinerary") val itinerary: List<String> = emptyList()
+)
+
+data class ApiTrip(
+    @SerializedName("_id") val id: String,
+    @SerializedName("tripName") val tripName: String? = null,
+    @SerializedName("destination") val destinationId: String? = null,
+    @SerializedName("hotel") val hotelId: String? = null,
+    @SerializedName("startDate") val startDate: String? = null,
+    @SerializedName("endDate") val endDate: String? = null,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("travelers") val travelers: Travelers? = null,
+    @SerializedName("isAIGenerated") val isAIGenerated: Boolean? = null,
+    @SerializedName("isPublic") val isPublic: Boolean? = null
+)
+
+data class TripsListData(
+    @SerializedName("trips") val trips: List<ApiTrip>? = null // shape unconfirmed (list vs {trips, pagination}) — see note in TravelRepository
+)
+
+
+data class DestinationSearchData(
+    @SerializedName("source") val source: String? = null,
+    @SerializedName("results") val results: List<ApiDestination> = emptyList()
 )

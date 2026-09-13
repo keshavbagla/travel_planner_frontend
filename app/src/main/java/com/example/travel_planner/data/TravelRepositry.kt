@@ -1,7 +1,5 @@
 package com.example.travel_planner.data
 
-import com.example.travel_planner.dat.ApiTrip
-import com.example.travel_planner.dat.CreateTripRequest
 import com.example.travel_planner.model.Activity
 import com.example.travel_planner.model.Destination
 import com.example.travel_planner.model.Hotel
@@ -20,15 +18,26 @@ object TravelRepository {
         if (!body.success) throw IOException(body.message)
         return body.data ?: throw IOException("No data in response")
     }
-
-    suspend fun loadDestinationsUi(search: String? = null, destinationType: String? = null, country: String? = null): List<Destination> =
-        unwrap(
-            api.getDestinations(
-                search = search?.takeIf { it.isNotBlank() },
-                destinationType = destinationType?.takeIf { it.isNotBlank() },
-                country = country?.takeIf { it.isNotBlank() } // <-- added
-            )
-        ).destinations.map { it.toUiModel() }
+    suspend fun loadDestinationsUi(search: String? = null, destinationType: String? = null, country: String? = null): List<Destination> {
+        val trimmedSearch = search?.trim()
+        val results: List<ApiDestination> = if (!trimmedSearch.isNullOrBlank()) {
+            unwrap(api.searchDestinations(trimmedSearch)).results
+        } else {
+            unwrap(
+                api.getDestinations(
+                    destinationType = destinationType?.takeIf { it.isNotBlank() },
+                    country = country?.takeIf { it.isNotBlank() }
+                )
+            ).destinations
+        }
+        val filtered = if (!trimmedSearch.isNullOrBlank() && !destinationType.isNullOrBlank()) {
+            // search endpoint doesn't take destinationType, so apply it here
+            results.filter { dest -> dest.destinationType?.any { it.equals(destinationType, ignoreCase = true) } == true }
+        } else {
+            results
+        }
+        return filtered.map { it.toUiModel() }
+    }
 
     suspend fun loadDestinationUi(id: String): Destination =
         unwrap(api.getDestinationById(id)).toUiModel()
@@ -83,7 +92,6 @@ object TravelRepository {
     suspend fun filterBookings(status: String): List<ApiBooking> =
         unwrap(api.filterBookings(mapOf("status" to status)))
 
-
     suspend fun createTrip(
         tripName: String,
         destinationId: String,
@@ -99,7 +107,6 @@ object TravelRepository {
             )
         )
     )
-
     suspend fun getMyTrips(): List<ApiTrip> {
         val json = unwrap(api.getTrips())
         val gson = Gson()
