@@ -51,15 +51,9 @@ import com.example.travel_planner.ui.theme.*
 import com.example.travel_planner.ui.viewmodel.FlightsViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
 import java.util.Calendar
+import android.content.Intent
+import android.net.Uri
 
-/**
- * The backend API doc (17 documented endpoints) has no airport-search
- * endpoint — GET /destinations doesn't return IATA codes for the list view
- * either (only GET /destinations/:id has a primaryAirportIata field, one
- * at a time). So this is a curated static list, not API-backed. If the
- * backend adds an airport-search endpoint later, swap this out for a real
- * TravelRepository call + debounced search.
- */
 private val AIRPORTS = listOf(
     "DEL" to "Delhi, India", "BOM" to "Mumbai, India", "BLR" to "Bengaluru, India",
     "MAA" to "Chennai, India", "CCU" to "Kolkata, India", "HYD" to "Hyderabad, India",
@@ -81,6 +75,10 @@ fun FlightsScreen(
     viewModel: FlightsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
+
+    val bookingState by viewModel.bookingState.collectAsState()
 
     var departureIata by remember { mutableStateOf("") }
     var arrivalIata by remember { mutableStateOf("") }
@@ -398,7 +396,7 @@ private fun FlightCard(flight: Flight, onSelect: () -> Unit) {
                 Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(Border))
                 Text(flight.airline, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Navy)
             }
-            Text("$${flight.price}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Navy)
+            Text("Rs${flight.price}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Navy)
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

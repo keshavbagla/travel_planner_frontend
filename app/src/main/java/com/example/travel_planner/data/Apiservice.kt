@@ -53,17 +53,24 @@ interface ApiService {
         @Path("hotelId") hotelId: String
     ): Response<ApiResponse<ApiHotel>>
 
-    @POST("flight-offers/search")
+    @POST("flight/search")
     suspend fun searchFlightOffers(
         @Body request: FlightOfferSearchRequest
     ): Response<ApiResponse<FlightOfferSearchData>>
 
-    @POST("flight-offers/select")
+    @POST("flight/select")
     suspend fun selectFlightOffer(
         @Body request: FlightOfferSelectRequest
     ): Response<ApiResponse<ApiFlightOffer>>
 
-    @GET("flight-offers/{flightOfferId}/booking-url")
+
+    @GET("flight/{flightId}")
+    suspend fun getFlight(
+        @Path("flightId") flightId: String
+    ): Response<ApiResponse<ApiFlightOffer>>
+
+
+    @GET("flight/{flightOfferId}/booking-url")
     suspend fun getFlightBookingUrl(
         @Path("flightOfferId") flightOfferId: String
     ): Response<ApiResponse<FlightBookingUrlData>>
@@ -125,3 +132,5 @@ interface ApiService {
         @Query("limit") limit: Int = 20
     ): Response<ApiResponse<ExternalRestaurantsData>>
 }
+
+

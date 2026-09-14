@@ -1,8 +1,10 @@
 package com.example.travel_planner.data
 
 
+import com.google.android.gms.common.api.Response
 import com.google.gson.JsonElement
 import com.google.gson.annotations.SerializedName
+import retrofit2.http.Query
 
 data class ApiResponse<T>(
     @SerializedName("statusCode") val statusCode: Int,
@@ -321,4 +323,20 @@ data class TripsListData(
 data class DestinationSearchData(
     @SerializedName("source") val source: String? = null,
     @SerializedName("results") val results: List<ApiDestination> = emptyList()
+)
+
+data class ExternalHotelsData(
+    @SerializedName("hotels")
+    val hotels: List<ApiHotel> = emptyList(),
+
+    @SerializedName("meta")
+    val meta: JsonElement? = null
+)
+
+data class ExternalRestaurantsData(
+    @SerializedName("restaurants")
+    val restaurants: List<ApiRestaurant> = emptyList(),
+
+    @SerializedName("meta")
+    val meta: JsonElement? = null
 )
