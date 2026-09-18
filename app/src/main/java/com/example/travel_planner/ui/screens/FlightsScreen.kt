@@ -1,6 +1,7 @@
 package com.example.travel_planner.ui.screens.flights
 
 import android.app.DatePickerDialog
+import android.icu.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,9 +51,8 @@ import com.example.travel_planner.model.Flight
 import com.example.travel_planner.ui.theme.*
 import com.example.travel_planner.ui.viewmodel.FlightsViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
-import java.util.Calendar
-import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.LaunchedEffect
 
 private val AIRPORTS = listOf(
     "DEL" to "Delhi, India", "BOM" to "Mumbai, India", "BLR" to "Bengaluru, India",
@@ -71,18 +71,29 @@ private val TRAVEL_CLASSES = listOf("ECONOMY", "BUSINESS", "FIRST")
 @Composable
 fun FlightsScreen(
     onSearchClick: () -> Unit = {},
-    onSelectFlight: (Flight) -> Unit = {},
+    onFlightDetails: (String) -> Unit = {},
     viewModel: FlightsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val context = LocalContext.current
+    val selectionState by viewModel.selectionState.collectAsState()
 
-    val bookingState by viewModel.bookingState.collectAsState()
+    LaunchedEffect(selectionState) {
+
+        if (selectionState is UiState.Success) {
+
+            val flightOfferId =
+                (selectionState as UiState.Success<String>).data
+
+            onFlightDetails(flightOfferId)
+
+            viewModel.clearSelectionState()
+        }
+    }
 
     var departureIata by remember { mutableStateOf("") }
     var arrivalIata by remember { mutableStateOf("") }
-    var outboundDate by remember { mutableStateOf("") } // "yyyy-MM-dd"
+    var outboundDate by remember { mutableStateOf("") }
     var adults by remember { mutableStateOf(1) }
     var travelClass by remember { mutableStateOf("ECONOMY") }
 
@@ -131,7 +142,7 @@ fun FlightsScreen(
                     onValueChange = { travelClass = it },
                     modifier = Modifier.weight(1f)
                 )
-                Box(modifier = Modifier.weight(1f)) // spacer to keep the row balanced
+                Box(modifier = Modifier.weight(1f))
             }
 
             Box(
@@ -182,7 +193,7 @@ fun FlightsScreen(
             is UiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        "Couldn't search flights: {state.message}" +
+                        "Couldn't search flights: ${state.message}" +
                                 if (state.message.contains("401")) "\n\nThis usually means you're not logged in — the flight search endpoint requires a valid session." else "",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Slate
@@ -201,7 +212,12 @@ fun FlightsScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.data) { flight ->
-                            FlightCard(flight = flight, onSelect = { onSelectFlight(flight) })
+                            FlightCard(
+                                flight = flight,
+                                onSelect = {
+                                    viewModel.selectFlight(flight)
+                                }
+                            )
                         }
                     }
                 }
@@ -430,8 +446,13 @@ private fun FlightCard(flight: Flight, onSelect: () -> Unit) {
                         .clickable { onSelect() }
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Text("Select", color = White, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Select",
+                        color = White,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
+
             }
         }
     }

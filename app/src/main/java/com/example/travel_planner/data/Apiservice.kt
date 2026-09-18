@@ -64,9 +64,9 @@ interface ApiService {
     ): Response<ApiResponse<ApiFlightOffer>>
 
 
-    @GET("flight/{flightId}")
+    @GET("flight/{flightOfferId}/booking-details")
     suspend fun getFlight(
-        @Path("flightId") flightId: String
+        @Path("flightOfferId") flightOfferId: String
     ): Response<ApiResponse<ApiFlightOffer>>
 
 

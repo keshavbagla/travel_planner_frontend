@@ -216,6 +216,23 @@ object TravelRepository {
         )
     }
 
+    suspend fun getFlightBookingDetails(
+        flightOfferId: String
+    ): ApiFlightOffer {
+
+        if (flightOfferId.isBlank()) {
+            throw IOException(
+                "Flight offer ID is required"
+            )
+        }
+
+        return unwrap(
+            api.getFlight(
+                flightOfferId
+            )
+        )
+    }
+
     suspend fun getFlightBookingUrl(
         flightOfferId: String
     ): FlightBookingUrlData {
