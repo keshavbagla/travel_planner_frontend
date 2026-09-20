@@ -253,7 +253,7 @@ fun NavGraph(
                             )
                         },
 
-                        onDestinationClick = { destinationId ->
+                        onDestinationClick = { destinationId, destinationName->
 
                             navController.navigate(
                                 Destination.DestinationDetails
@@ -279,7 +279,7 @@ fun NavGraph(
                     DestinationsScreen(
 
                         onDestinationClick = {
-                                destinationId ->
+                                destinationId, destinationName->
 
                             navController.navigate(
                                 Destination.DestinationDetails
@@ -328,7 +328,7 @@ fun NavGraph(
                         initialDestinationType = type,
 
                         onDestinationClick = {
-                                destinationId ->
+                                destinationId, destinationName->
 
                             navController.navigate(
                                 Destination.DestinationDetails

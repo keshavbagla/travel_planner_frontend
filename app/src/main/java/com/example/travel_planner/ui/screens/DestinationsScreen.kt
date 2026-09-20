@@ -49,62 +49,100 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.compose.AsyncImage
 import com.example.travel_planner.data.TravelRepository
+import com.example.travel_planner.data.toUiModel
 import com.example.travel_planner.model.Destination
-import com.example.travel_planner.ui.theme.*
+import com.example.travel_planner.ui.theme.Background
+import com.example.travel_planner.ui.theme.Border
+import com.example.travel_planner.ui.theme.LightBlue
+import com.example.travel_planner.ui.theme.Navy
+import com.example.travel_planner.ui.theme.PrimaryBlue
+import com.example.travel_planner.ui.theme.Slate
+import com.example.travel_planner.ui.theme.White
 import com.example.travel_planner.ui.viewmodel.ResourceViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
 import kotlinx.coroutines.delay
 
+private val DESTINATION_TYPES = listOf(
+    "Beach",
+    "Mountains",
+    "City",
+    "Adventure",
+    "Cultural"
+)
 
 @Composable
 fun DestinationsScreen(
-    onDestinationClick: (String) -> Unit = {},
+    onDestinationClick: (String, String) -> Unit = { _, _ -> },
     initialQuery: String = "",
     initialDestinationType: String = "",
+
     viewModel: ResourceViewModel<List<Destination>> = viewModel(
         factory = viewModelFactory {
+
             initializer {
+
                 ResourceViewModel {
-                    TravelRepository.loadDestinationsUi(
+
+                    loadDestinationResults(
                         query = initialQuery,
-                        tripType = initialDestinationType,
+                        destinationType = initialDestinationType,
                         region = "",
                         budgetTier = "",
-                        season = ""
+                        season = "",
+                        tripType = initialDestinationType
                     )
                 }
             }
         }
     )
 ) {
+
     val uiState by viewModel.uiState.collectAsState()
 
-    var searchQuery by remember { mutableStateOf(initialQuery) }
-    var selectedType by remember { mutableStateOf(initialDestinationType) }
+    var searchQuery by remember {
+        mutableStateOf(initialQuery)
+    }
 
-    var selectedRegion by remember { mutableStateOf("") }
-    var selectedBudgetTier by remember { mutableStateOf("") }
-    var selectedSeason by remember { mutableStateOf("") }
+    var selectedType by remember {
+        mutableStateOf(initialDestinationType)
+    }
 
-    var isFirstLaunch by remember { mutableStateOf(true) }
+    var selectedRegion by remember {
+        mutableStateOf("")
+    }
+
+    var selectedBudgetTier by remember {
+        mutableStateOf("")
+    }
+
+    var selectedSeason by remember {
+        mutableStateOf("")
+    }
+
+    var firstLaunch by remember {
+        mutableStateOf(true)
+    }
 
     LaunchedEffect(
         searchQuery,
+        selectedType,
         selectedRegion,
         selectedBudgetTier,
-        selectedSeason,
-        selectedType
+        selectedSeason
     ) {
-        if (isFirstLaunch) {
-            isFirstLaunch = false
+
+        if (firstLaunch) {
+            firstLaunch = false
             return@LaunchedEffect
         }
 
         delay(400)
 
         viewModel.refresh {
-            TravelRepository.loadDestinationsUi(
+
+            loadDestinationResults(
                 query = searchQuery,
+                destinationType = selectedType,
                 region = selectedRegion,
                 budgetTier = selectedBudgetTier,
                 season = selectedSeason,
@@ -113,46 +151,63 @@ fun DestinationsScreen(
         }
     }
 
+
+    // ========================================================
+    // UI
+    // ========================================================
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
     ) {
 
-        /*
-         * Search + filters
-         */
+        // ====================================================
+        // SEARCH + FILTERS
+        // ====================================================
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(White)
-                .border(0.5.dp, Border)
+                .border(
+                    width = 0.5.dp,
+                    color = Border
+                )
                 .padding(16.dp),
+
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Background)
-                    .border(
-                        1.dp,
-                        Border,
+                    .clip(
                         RoundedCornerShape(22.dp)
+                    )
+                    .background(LightBlue)
+                    .border(
+                        width = 1.dp,
+                        color = PrimaryBlue.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(22.dp)
                     )
                     .padding(
                         horizontal = 16.dp,
                         vertical = 12.dp
                     ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+
+                verticalAlignment =
+                    Alignment.CenterVertically,
+
+                horizontalArrangement =
+                    Arrangement.spacedBy(10.dp)
             ) {
 
                 Icon(
-                    Icons.Filled.Search,
+                    imageVector = Icons.Filled.Search,
                     contentDescription = "Search",
-                    tint = Slate,
-                    modifier = Modifier.size(16.dp)
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(18.dp)
                 )
 
                 Box(
@@ -160,45 +215,54 @@ fun DestinationsScreen(
                 ) {
 
                     if (searchQuery.isEmpty()) {
+
                         Text(
-                            "Search destination...",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Search destination...",
+                            style =
+                                MaterialTheme.typography.bodyMedium,
                             color = Slate
                         )
                     }
 
                     BasicTextField(
                         value = searchQuery,
+
                         onValueChange = {
                             searchQuery = it
                         },
+
                         singleLine = true,
+
                         textStyle = TextStyle(
                             fontSize = 14.sp,
                             color = Navy
                         ),
-                        modifier = Modifier.fillMaxWidth()
+
+                        modifier =
+                            Modifier.fillMaxWidth()
                     )
                 }
 
                 Icon(
-                    Icons.Filled.Tune,
+                    imageVector = Icons.Filled.Tune,
                     contentDescription = "Filters",
-                    tint = Slate,
-                    modifier = Modifier.size(16.dp)
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
             Row(
-                modifier = Modifier
-                    .horizontalScroll(
-                        rememberScrollState()
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.horizontalScroll(
+                    rememberScrollState()
+                ),
+
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp)
             ) {
 
                 RegionFilterPill(
                     selected = selectedRegion,
+
                     onSelect = {
                         selectedRegion = it
                     }
@@ -206,6 +270,7 @@ fun DestinationsScreen(
 
                 BudgetFilterPill(
                     selected = selectedBudgetTier,
+
                     onSelect = {
                         selectedBudgetTier = it
                     }
@@ -213,6 +278,7 @@ fun DestinationsScreen(
 
                 SeasonFilterPill(
                     selected = selectedSeason,
+
                     onSelect = {
                         selectedSeason = it
                     }
@@ -220,6 +286,7 @@ fun DestinationsScreen(
 
                 TripTypeFilterPill(
                     selected = selectedType,
+
                     onSelect = {
                         selectedType = it
                     }
@@ -227,20 +294,23 @@ fun DestinationsScreen(
             }
         }
 
-        /*
-         * Content
-         */
         when (val state = uiState) {
 
             is UiState.Loading -> {
 
                 Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+
+                    contentAlignment =
+                        Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+
+                    CircularProgressIndicator(
+                        color = PrimaryBlue
+                    )
                 }
             }
+
 
             is UiState.Error -> {
 
@@ -248,12 +318,18 @@ fun DestinationsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(24.dp),
-                    contentAlignment = Alignment.Center
+
+                    contentAlignment =
+                        Alignment.Center
                 ) {
 
                     Text(
-                        "Couldn't load destinations: ${state.message}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text =
+                            "Couldn't load destinations: ${state.message}",
+
+                        style =
+                            MaterialTheme.typography.bodyMedium,
+
                         color = Slate
                     )
                 }
@@ -267,11 +343,14 @@ fun DestinationsScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(24.dp),
-                        contentAlignment = Alignment.Center
+
+                        contentAlignment =
+                            Alignment.Center
                     ) {
 
                         Text(
-                            when {
+                            text = when {
+
                                 searchQuery.isNotBlank() ->
                                     "No destinations match \"$searchQuery\"."
 
@@ -290,7 +369,10 @@ fun DestinationsScreen(
                                 else ->
                                     "No destinations found yet."
                             },
-                            style = MaterialTheme.typography.bodyMedium,
+
+                            style =
+                                MaterialTheme.typography.bodyMedium,
+
                             color = Slate
                         )
                     }
@@ -302,17 +384,34 @@ fun DestinationsScreen(
                             .weight(1f)
                             .fillMaxWidth()
                             .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+
+                        verticalArrangement =
+                            Arrangement.spacedBy(16.dp)
                     ) {
 
-                        items(state.data) { destination ->
+                        items(
+                            items = state.data,
+
+                            key = {
+                                it.id
+                            }
+                        ) { destination ->
 
                             DestinationStackCard(
                                 destination = destination,
+
                                 onClick = {
-                                    onDestinationClick(
+
+                                    val destinationId =
                                         destination.id
-                                    )
+
+                                    if (destinationId.isNotBlank()) {
+
+                                        onDestinationClick(
+                                            destinationId,
+                                            destination.name
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -320,15 +419,78 @@ fun DestinationsScreen(
                 }
             }
 
-            else -> {}
+            else -> Unit
         }
     }
 }
+
+private suspend fun loadDestinationResults(
+    query: String,
+    destinationType: String,
+    region: String,
+    budgetTier: String,
+    season: String,
+    tripType: String
+): List<Destination> {
+
+    val cleanQuery =
+        query.trim()
+
+    if (cleanQuery.isNotBlank()) {
+
+        val result =
+            TravelRepository.searchDestinations(
+                keyword = cleanQuery,
+
+                region =
+                    region.takeIf {
+                        it.isNotBlank()
+                    },
+
+                budgetTier =
+                    budgetTier.takeIf {
+                        it.isNotBlank()
+                    },
+
+                season =
+                    season.takeIf {
+                        it.isNotBlank()
+                    },
+
+                tripType =
+                    tripType.takeIf {
+                        it.isNotBlank()
+                    }
+            )
+
+        return result.results
+            .map {
+                it.toUiModel()
+            }
+    }
+
+    val result =
+        TravelRepository.getDestinations(
+            destinationType =
+                destinationType.takeIf {
+                    it.isNotBlank()
+                },
+
+            country = null
+        )
+
+    return result.destinations
+        .map {
+            it.toUiModel()
+        }
+}
+
 @Composable
 private fun RegionFilterPill(
     selected: String,
     onSelect: (String) -> Unit
 ) {
+
     var expanded by remember {
         mutableStateOf(false)
     }
@@ -343,22 +505,32 @@ private fun RegionFilterPill(
     )
 
     FilterDropdownPill(
-        label = selected.ifBlank { "Region" },
-        selected = selected.isNotBlank(),
+        label =
+            selected.ifBlank {
+                "Region"
+            },
+
+        selected =
+            selected.isNotBlank(),
+
         expanded = expanded,
+
         onClick = {
             expanded = true
         },
+
         onDismiss = {
             expanded = false
         }
     ) {
 
         if (selected.isNotBlank()) {
+
             DropdownMenuItem(
                 text = {
                     Text("All Regions")
                 },
+
                 onClick = {
                     onSelect("")
                     expanded = false
@@ -372,6 +544,7 @@ private fun RegionFilterPill(
                 text = {
                     Text(region)
                 },
+
                 onClick = {
                     onSelect(region)
                     expanded = false
@@ -380,11 +553,13 @@ private fun RegionFilterPill(
         }
     }
 }
+
 @Composable
 private fun BudgetFilterPill(
     selected: String,
     onSelect: (String) -> Unit
 ) {
+
     var expanded by remember {
         mutableStateOf(false)
     }
@@ -396,22 +571,32 @@ private fun BudgetFilterPill(
     )
 
     FilterDropdownPill(
-        label = selected.ifBlank { "Budget Tier" },
-        selected = selected.isNotBlank(),
+        label =
+            selected.ifBlank {
+                "Budget Tier"
+            },
+
+        selected =
+            selected.isNotBlank(),
+
         expanded = expanded,
+
         onClick = {
             expanded = true
         },
+
         onDismiss = {
             expanded = false
         }
     ) {
 
         if (selected.isNotBlank()) {
+
             DropdownMenuItem(
                 text = {
                     Text("All Budgets")
                 },
+
                 onClick = {
                     onSelect("")
                     expanded = false
@@ -425,6 +610,7 @@ private fun BudgetFilterPill(
                 text = {
                     Text(budget)
                 },
+
                 onClick = {
                     onSelect(budget)
                     expanded = false
@@ -433,11 +619,14 @@ private fun BudgetFilterPill(
         }
     }
 }
+
+
 @Composable
 private fun SeasonFilterPill(
     selected: String,
     onSelect: (String) -> Unit
 ) {
+
     var expanded by remember {
         mutableStateOf(false)
     }
@@ -449,22 +638,32 @@ private fun SeasonFilterPill(
     )
 
     FilterDropdownPill(
-        label = selected.ifBlank { "Season" },
-        selected = selected.isNotBlank(),
+        label =
+            selected.ifBlank {
+                "Season"
+            },
+
+        selected =
+            selected.isNotBlank(),
+
         expanded = expanded,
+
         onClick = {
             expanded = true
         },
+
         onDismiss = {
             expanded = false
         }
     ) {
 
         if (selected.isNotBlank()) {
+
             DropdownMenuItem(
                 text = {
                     Text("All Seasons")
                 },
+
                 onClick = {
                     onSelect("")
                     expanded = false
@@ -478,6 +677,7 @@ private fun SeasonFilterPill(
                 text = {
                     Text(season)
                 },
+
                 onClick = {
                     onSelect(season)
                     expanded = false
@@ -486,40 +686,44 @@ private fun SeasonFilterPill(
         }
     }
 }
-val DESTINATION_TYPES = listOf(
-    "Beach",
-    "Mountains",
-    "City",
-    "Adventure",
-    "Cultural"
-)
 
 @Composable
 private fun TripTypeFilterPill(
     selected: String,
     onSelect: (String) -> Unit
 ) {
+
     var expanded by remember {
         mutableStateOf(false)
     }
 
     FilterDropdownPill(
-        label = selected.ifBlank { "Trip Type" },
-        selected = selected.isNotBlank(),
+        label =
+            selected.ifBlank {
+                "Trip Type"
+            },
+
+        selected =
+            selected.isNotBlank(),
+
         expanded = expanded,
+
         onClick = {
             expanded = true
         },
+
         onDismiss = {
             expanded = false
         }
     ) {
 
         if (selected.isNotBlank()) {
+
             DropdownMenuItem(
                 text = {
                     Text("All Trip Types")
                 },
+
                 onClick = {
                     onSelect("")
                     expanded = false
@@ -533,6 +737,7 @@ private fun TripTypeFilterPill(
                 text = {
                     Text(type)
                 },
+
                 onClick = {
                     onSelect(type)
                     expanded = false
@@ -551,26 +756,33 @@ private fun FilterDropdownPill(
     onDismiss: () -> Unit,
     content: @Composable () -> Unit
 ) {
+
     Box {
 
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
+                .clip(
+                    RoundedCornerShape(16.dp)
+                )
                 .background(
                     if (selected) {
-                        TealTint
+                        LightBlue
                     } else {
                         White
                     }
                 )
                 .border(
-                    1.dp,
-                    if (selected) {
-                        Teal
-                    } else {
-                        Border
-                    },
-                    RoundedCornerShape(16.dp)
+                    width = 1.dp,
+
+                    color =
+                        if (selected) {
+                            PrimaryBlue
+                        } else {
+                            Border
+                        },
+
+                    shape =
+                        RoundedCornerShape(16.dp)
                 )
                 .clickable {
                     onClick()
@@ -579,21 +791,38 @@ private fun FilterDropdownPill(
                     horizontal = 12.dp,
                     vertical = 6.dp
                 ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+
+            verticalAlignment =
+                Alignment.CenterVertically,
+
+            horizontalArrangement =
+                Arrangement.spacedBy(4.dp)
         ) {
 
             Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Navy
+                text = label,
+
+                style =
+                    MaterialTheme.typography.bodyMedium,
+
+                color =
+                    if (selected) {
+                        PrimaryBlue
+                    } else {
+                        Navy
+                    }
             )
 
             Icon(
-                Icons.Filled.KeyboardArrowDown,
+                imageVector =
+                    Icons.Filled.KeyboardArrowDown,
+
                 contentDescription = null,
-                tint = Navy,
-                modifier = Modifier.size(14.dp)
+
+                tint = PrimaryBlue,
+
+                modifier =
+                    Modifier.size(14.dp)
             )
         }
 
@@ -605,16 +834,20 @@ private fun FilterDropdownPill(
         }
     }
 }
+
 @Composable
 private fun DestinationStackCard(
     destination: Destination,
     onClick: () -> Unit
 ) {
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(180.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(
+                RoundedCornerShape(16.dp)
+            )
             .background(Navy)
             .clickable {
                 onClick()
@@ -623,8 +856,12 @@ private fun DestinationStackCard(
 
         AsyncImage(
             model = destination.imageUrl,
-            contentDescription = destination.name,
-            modifier = Modifier.fillMaxSize()
+
+            contentDescription =
+                destination.name,
+
+            modifier =
+                Modifier.fillMaxSize()
         )
 
         Row(
@@ -632,31 +869,47 @@ private fun DestinationStackCard(
                 .fillMaxWidth()
                 .align(Alignment.BottomStart)
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
+
+            horizontalArrangement =
+                Arrangement.SpaceBetween,
+
+            verticalAlignment =
+                Alignment.Bottom
         ) {
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement =
+                    Arrangement.spacedBy(4.dp)
             ) {
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment =
+                        Alignment.CenterVertically,
+
+                    horizontalArrangement =
+                        Arrangement.spacedBy(8.dp)
                 ) {
 
                     Text(
-                        destination.name,
+                        text = destination.name,
+
                         color = White,
-                        fontWeight = FontWeight.Bold,
+
+                        fontWeight =
+                            FontWeight.Bold,
+
                         fontSize = 20.sp
                     )
 
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(
+                                RoundedCornerShape(4.dp)
+                            )
                             .background(
-                                White.copy(alpha = 0.2f)
+                                White.copy(
+                                    alpha = 0.2f
+                                )
                             )
                             .padding(
                                 horizontal = 6.dp,
@@ -665,62 +918,109 @@ private fun DestinationStackCard(
                     ) {
 
                         Text(
-                            destination.priceTier,
+                            text =
+                                destination.priceTier,
+
                             color = White,
-                            style = MaterialTheme.typography.labelSmall
+
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelSmall
                         )
                     }
                 }
 
+
                 destination.country?.let {
 
-                    Text(
-                        it,
-                        color = White.copy(alpha = 0.8f),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (it.isNotBlank()) {
+
+                        Text(
+                            text = it,
+
+                            color =
+                                White.copy(
+                                    alpha = 0.8f
+                                ),
+
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .bodyMedium
+                        )
+                    }
                 }
             }
 
+
             Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalAlignment =
+                    Alignment.End,
+
+                verticalArrangement =
+                    Arrangement.spacedBy(10.dp)
             ) {
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalAlignment =
+                        Alignment.CenterVertically,
+
+                    horizontalArrangement =
+                        Arrangement.spacedBy(4.dp)
                 ) {
 
                     if (destination.rating > 0.0) {
 
                         Icon(
-                            Icons.Filled.Star,
+                            imageVector =
+                                Icons.Filled.Star,
+
                             contentDescription = null,
+
                             tint = White,
-                            modifier = Modifier.size(12.dp)
+
+                            modifier =
+                                Modifier.size(12.dp)
                         )
 
                         Text(
-                            "${destination.rating}",
+                            text =
+                                destination.rating
+                                    .toString(),
+
                             color = White,
-                            style = MaterialTheme.typography.labelMedium
+
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelMedium
                         )
 
                     } else {
 
                         Text(
-                            "New",
+                            text = "New",
+
                             color = White,
-                            style = MaterialTheme.typography.labelMedium
+
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .labelMedium
                         )
                     }
                 }
 
+
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Teal)
+                        .clip(
+                            RoundedCornerShape(12.dp)
+                        )
+                        .background(
+                            PrimaryBlue
+                        )
                         .padding(
                             horizontal = 16.dp,
                             vertical = 6.dp
@@ -728,9 +1028,14 @@ private fun DestinationStackCard(
                 ) {
 
                     Text(
-                        "Explore",
+                        text = "Explore",
+
                         color = White,
-                        style = MaterialTheme.typography.labelMedium
+
+                        style =
+                            MaterialTheme
+                                .typography
+                                .labelMedium
                     )
                 }
             }
@@ -738,11 +1043,14 @@ private fun DestinationStackCard(
     }
 }
 
+
 @Preview(
     showBackground = true,
     showSystemUi = true
 )
 @Composable
 private fun DestinationsScreenPreview() {
+
     DestinationsScreen()
 }
+

@@ -4,10 +4,9 @@ import com.example.travel_planner.model.Activity
 import com.example.travel_planner.model.Destination
 import com.example.travel_planner.model.Hotel
 import com.example.travel_planner.model.Restaurant
-import com.google.gson.Gson
-import retrofit2.Response
+import com.google.gson.JsonElement
 import java.io.IOException
-
+import retrofit2.Response
 object TravelRepository {
 
     private val api = RetrofitClient.apiService
@@ -36,147 +35,94 @@ object TravelRepository {
         return body.data
             ?: throw IOException("No data in response")
     }
-
-    suspend fun loadDestinationsUi(
-        search: String? = null,
+    suspend fun getDestinations(
         destinationType: String? = null,
-        country: String? = null,
-        query: String,
-        tripType: String,
-        region: String,
-        budgetTier: String,
-        season: String
-    ): List<Destination> {
-
-        val trimmedSearch = search?.trim()
-
-        val results: List<ApiDestination> =
-            if (!trimmedSearch.isNullOrBlank()) {
-
-                unwrap(
-                    api.searchDestinations(
-                        trimmedSearch
-                    )
-                ).results
-
-            } else {
-
-                unwrap(
-                    api.getDestinations(
-                        destinationType =
-                            destinationType?.takeIf {
-                                it.isNotBlank()
-                            },
-                        country =
-                            country?.takeIf {
-                                it.isNotBlank()
-                            }
-                    )
-                ).destinations
-            }
-
-        val filtered =
-            if (
-                !trimmedSearch.isNullOrBlank() &&
-                !destinationType.isNullOrBlank()
-            ) {
-
-                results.filter { destination ->
-
-                    destination.destinationType?.any {
-                        it.equals(
-                            destinationType,
-                            ignoreCase = true
-                        )
-                    } == true
-                }
-
-            } else {
-                results
-            }
-
-        return filtered.map {
-            it.toUiModel()
-        }
-    }
-
-    suspend fun loadDestinationUi(
-        id: String
-    ): Destination =
-        unwrap(
-            api.getDestinationById(id)
-        ).toUiModel()
-
-
-    suspend fun loadHotelsUi(
-        search: String? = null,
-        destinationId: String? = null
-    ): List<Hotel> {
+        country: String? = null
+    ): DestinationsData {
 
         return unwrap(
-            api.getHotels(
-                search = search?.takeIf {
-                    it.isNotBlank()
-                },
-                destinationId =
-                    destinationId?.takeIf {
-                        it.isNotBlank()
-                    }
+            api.getDestinations(
+                destinationType = destinationType,
+                country = country
             )
-        ).hotels.map {
-            it.toUiModel()
-        }
+        )
     }
+    suspend fun searchDestinations(
+        keyword: String,
+        region: String? = null,
+        budgetTier: String? = null,
+        season: String? = null,
+        tripType: String? = null
+    ): DestinationSearchData {
 
-    suspend fun loadHotelUi(
-        id: String
-    ): Hotel =
-        unwrap(
-            api.getHotelById(id)
-        ).toUiModel()
+        val cleanKeyword = keyword.trim()
 
-    suspend fun loadRestaurantsUi(
-        destinationId: String? = null
-    ): List<Restaurant> {
+        if (cleanKeyword.isBlank()) {
+            throw IOException(
+                "Please enter a destination"
+            )
+        }
 
         return unwrap(
-            api.getRestaurants(
-                destinationId =
-                    destinationId?.takeIf {
-                        it.isNotBlank()
-                    }
+            api.searchDestinations(
+                keyword = cleanKeyword,
+                region = region?.takeIf { it.isNotBlank() },
+                budgetTier = budgetTier?.takeIf { it.isNotBlank() },
+                season = season?.takeIf { it.isNotBlank() },
+                tripType = tripType?.takeIf { it.isNotBlank() }
             )
-        ).restaurants.map {
-            it.toUiModel()
+        )
+    }
+    suspend fun getDestinationById(
+        destinationId: String
+    ): ApiDestination {
+
+        if (destinationId.isBlank()) {
+            throw IOException(
+                "Destination ID is required"
+            )
         }
+
+        return unwrap(
+            api.getDestinationById(
+                destinationId = destinationId
+            )
+        )
     }
 
-    suspend fun loadActivitiesUi(
+    suspend fun getActivities(
         destinationId: String? = null
-    ): List<Activity> {
+    ): ActivitiesData {
 
         return unwrap(
             api.getActivities(
-                destinationId =
-                    destinationId?.takeIf {
-                        it.isNotBlank()
-                    }
+                destinationId = destinationId
             )
-        ).activities.map {
-            it.toUiModel()
-        }
+        )
     }
 
-    suspend fun loadActivityUi(
-        id: String
-    ): Activity =
-        unwrap(
-            api.getActivityById(id)
-        ).toUiModel()
 
-    suspend fun searchExternalActivitiesUi(
+    suspend fun getActivityById(
+        activityId: String
+    ): ApiActivity {
+
+        if (activityId.isBlank()) {
+            throw IOException(
+                "Activity ID is required"
+            )
+        }
+
+        return unwrap(
+            api.getActivityById(
+                activityId = activityId
+            )
+        )
+    }
+
+
+    suspend fun searchExternalActivities(
         destinationId: String
-    ): List<ApiExternalActivity> {
+    ): ExternalActivitiesData {
 
         if (destinationId.isBlank()) {
             throw IOException(
@@ -186,9 +132,51 @@ object TravelRepository {
 
         return unwrap(
             api.searchExternalActivities(
-                destinationId
+                destinationId = destinationId
             )
-        ).activities
+        )
+    }
+
+    suspend fun getRestaurants(
+        destinationId: String? = null
+    ): RestaurantsData {
+
+        return unwrap(
+            api.getRestaurants(
+                destinationId = destinationId
+            )
+        )
+    }
+
+    suspend fun getHotels(
+        search: String? = null,
+        destinationId: String? = null
+    ): HotelsData {
+
+        return unwrap(
+            api.getHotels(
+                search = search,
+                destinationId = destinationId
+            )
+        )
+    }
+
+
+    suspend fun getHotelById(
+        hotelId: String
+    ): ApiHotel {
+
+        if (hotelId.isBlank()) {
+            throw IOException(
+                "Hotel ID is required"
+            )
+        }
+
+        return unwrap(
+            api.getHotelById(
+                hotelId = hotelId
+            )
+        )
     }
 
     suspend fun searchFlights(
@@ -196,12 +184,9 @@ object TravelRepository {
     ): FlightOfferSearchData {
 
         return unwrap(
-            api.searchFlightOffers(
-                request
-            )
+            api.searchFlightOffers(request)
         )
     }
-
     suspend fun selectFlight(
         flightOfferId: String
     ): ApiFlightOffer {
@@ -221,6 +206,7 @@ object TravelRepository {
         )
     }
 
+
     suspend fun getFlightBookingDetails(
         flightOfferId: String
     ): ApiFlightOffer {
@@ -233,10 +219,11 @@ object TravelRepository {
 
         return unwrap(
             api.getFlight(
-                flightOfferId
+                flightOfferId = flightOfferId
             )
         )
     }
+
 
     suspend fun getFlightBookingUrl(
         flightOfferId: String
@@ -250,17 +237,20 @@ object TravelRepository {
 
         return unwrap(
             api.getFlightBookingUrl(
-                flightOfferId
+                flightOfferId = flightOfferId
             )
         )
     }
 
     suspend fun createBooking(
         request: CreateBookingRequest
-    ): ApiBooking =
-        unwrap(
+    ): ApiBooking {
+
+        return unwrap(
             api.createBooking(request)
         )
+    }
+
 
     suspend fun redirectBooking(
         bookingId: String
@@ -274,118 +264,197 @@ object TravelRepository {
 
         return unwrap(
             api.redirectBooking(
-                bookingId
+                bookingId = bookingId
             )
         )
     }
 
-    suspend fun getMyBookings(): BookingsListData =
-        unwrap(
+
+    suspend fun getMyBookings(): BookingsListData {
+
+        return unwrap(
             api.getMyBookings()
         )
+    }
 
-    suspend fun getBooking(
-        id: String
-    ): ApiBooking =
-        unwrap(
-            api.getBookingById(id)
+
+    suspend fun getBookingById(
+        bookingId: String
+    ): ApiBooking {
+
+        if (bookingId.isBlank()) {
+            throw IOException(
+                "Booking ID is required"
+            )
+        }
+
+        return unwrap(
+            api.getBookingById(
+                bookingId = bookingId
+            )
         )
+    }
+
 
     suspend fun searchBookings(
         keyword: String
     ): List<ApiBooking> {
 
-        if (keyword.isBlank()) {
-            return emptyList()
+        val cleanKeyword = keyword.trim()
+
+        if (cleanKeyword.isBlank()) {
+            throw IOException(
+                "Search keyword is required"
+            )
         }
 
         return unwrap(
             api.searchBookings(
-                keyword.trim()
+                keyword = cleanKeyword
             )
         )
     }
 
-    suspend fun filterBookings(
-        status: String
-    ): List<ApiBooking> {
 
-        if (status.isBlank()) {
-            return emptyList()
-        }
+    suspend fun filterBookings(
+        filters: Map<String, String>
+    ): List<ApiBooking> {
 
         return unwrap(
             api.filterBookings(
-                mapOf(
-                    "status" to status
-                )
+                filters = filters
             )
         )
     }
 
     suspend fun createTrip(
-        tripName: String,
-        destinationId: String,
-        startDate: String,
-        endDate: String
+        request: CreateTripRequest
     ): ApiTrip {
 
         return unwrap(
-            api.createTrip(
-                CreateTripRequest(
-                    tripName = tripName,
-                    destinationId = destinationId,
-                    startDate = startDate,
-                    endDate = endDate
-                )
+            api.createTrip(request)
+        )
+    }
+
+
+    suspend fun getTrips(): JsonElement {
+
+        return unwrap(
+            api.getTrips()
+        )
+    }
+
+
+    suspend fun getTripById(
+        tripId: String
+    ): ApiTrip {
+
+        if (tripId.isBlank()) {
+            throw IOException(
+                "Trip ID is required"
+            )
+        }
+
+        return unwrap(
+            api.getTripById(
+                tripId = tripId
             )
         )
     }
 
-    suspend fun getMyTrips(): List<ApiTrip> {
+    suspend fun searchExternalHotels(
+        destinationId: String,
+        checkIn: String,
+        checkOut: String,
+        adults: Int = 2,
+        limit: Int = 10
+    ): ExternalHotelsData {
 
-        val json =
-            unwrap(
-                api.getTrips()
+        if (destinationId.isBlank()) {
+            throw IOException(
+                "Destination ID is required"
             )
+        }
 
-        val gson = Gson()
+        if (checkIn.isBlank()) {
+            throw IOException(
+                "Check-in date is required"
+            )
+        }
 
-        return when {
+        if (checkOut.isBlank()) {
+            throw IOException(
+                "Check-out date is required"
+            )
+        }
 
-            json.isJsonArray -> {
+        return unwrap(
+            api.searchExternalHotels(
+                destinationId = destinationId,
+                checkIn = checkIn,
+                checkOut = checkOut,
+                adults = adults,
+                limit = limit
+            )
+        )
+    }
+    suspend fun loadDestinationUi(
+        id: String
+    ): Destination =
+        unwrap(
+            api.getDestinationById(id)
+        ).toUiModel()
 
-                json.asJsonArray.map {
-                    gson.fromJson(
-                        it,
-                        ApiTrip::class.java
-                    )
+    suspend fun loadActivitiesUi(
+        destinationId: String? = null
+    ): List<Activity> {
+
+        return unwrap(
+            api.getActivities(
+                destinationId = destinationId?.takeIf {
+                    it.isNotBlank()
                 }
-            }
-
-            json.isJsonObject &&
-                    json.asJsonObject.has("trips") -> {
-
-                json.asJsonObject
-                    .getAsJsonArray("trips")
-                    .map {
-                        gson.fromJson(
-                            it,
-                            ApiTrip::class.java
-                        )
-                    }
-            }
-
-            else -> {
-                emptyList()
-            }
+            )
+        ).activities.map {
+            it.toUiModel()
         }
     }
 
-    suspend fun getTrip(
-        id: String
-    ): ApiTrip =
-        unwrap(
-            api.getTripById(id)
+    suspend fun loadHotelsUi(
+        search: String? = null,
+        destinationId: String? = null
+    ): List<Hotel> {
+        return getHotels(
+            search = search,
+            destinationId = destinationId
+        ).hotels.map { it.toUiModel() }
+    }
+
+    suspend fun loadRestaurantsUi(
+        destinationId: String? = null
+    ): List<Restaurant> {
+        return getRestaurants(
+            destinationId = destinationId
+        ).restaurants.map { it.toUiModel() }
+    }
+
+    suspend fun searchExternalRestaurants(
+        destinationId: String,
+        limit: Int = 20
+    ): ExternalRestaurantsData {
+
+        if (destinationId.isBlank()) {
+            throw IOException(
+                "Destination ID is required"
+            )
+        }
+
+        return unwrap(
+            api.searchExternalRestaurants(
+                destinationId = destinationId,
+                limit = limit
+            )
         )
+    }
+
 }

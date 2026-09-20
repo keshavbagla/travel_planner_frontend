@@ -45,7 +45,9 @@ fun RestaurantsScreen(
     onSelectRestaurant: (String) -> Unit = {},
     viewModel: ResourceViewModel<List<Restaurant>> = viewModel(
         factory = viewModelFactory {
-            initializer { ResourceViewModel { TravelRepository.loadRestaurantsUi() } }
+            initializer {
+                ResourceViewModel<List<Restaurant>> { TravelRepository.loadRestaurantsUi() }
+            }
         }
     )
 ) {

@@ -2,139 +2,199 @@ package com.example.travel_planner.data
 
 import com.google.gson.JsonElement
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
+import retrofit2.http.QueryMap
 
 interface ApiService {
 
     @GET("destinations")
     suspend fun getDestinations(
-        @Query("destinationType") destinationType: String? = null,
-        @Query("country") country: String? = null
+        @Query("destinationType")
+        destinationType: String? = null,
+
+        @Query("country")
+        country: String? = null
     ): Response<ApiResponse<DestinationsData>>
+
 
     @GET("destinations/search")
     suspend fun searchDestinations(
-        @Query("q") query: String,
-        @Query("region") region: String? = null,
-        @Query("budgetTier") budgetTier: String? = null,
-        @Query("season") season: String? = null,
-        @Query("tripType") tripType: String? = null
+        @Query("keyword")
+        keyword: String,
+
+        @Query("region")
+        region: String? = null,
+
+        @Query("budgetTier")
+        budgetTier: String? = null,
+
+        @Query("season")
+        season: String? = null,
+
+        @Query("tripType")
+        tripType: String? = null
     ): Response<ApiResponse<DestinationSearchData>>
+
 
     @GET("destinations/{destinationId}")
     suspend fun getDestinationById(
-        @Path("destinationId") destinationId: String
+        @Path("destinationId")
+        destinationId: String
     ): Response<ApiResponse<ApiDestination>>
 
     @GET("activities")
     suspend fun getActivities(
-        @Query("destination") destinationId: String? = null
+        @Query("destination")
+        destinationId: String? = null
     ): Response<ApiResponse<ActivitiesData>>
+
 
     @GET("activities/{activityId}")
     suspend fun getActivityById(
-        @Path("activityId") activityId: String
+        @Path("activityId")
+        activityId: String
     ): Response<ApiResponse<ApiActivity>>
+
 
     @GET("activities/search-external")
     suspend fun searchExternalActivities(
-        @Query("destinationId") destinationId: String
+        @Query("destinationId")
+        destinationId: String
     ): Response<ApiResponse<ExternalActivitiesData>>
 
     @GET("restaurants")
     suspend fun getRestaurants(
-        @Query("destination") destinationId: String? = null
+        @Query("destination")
+        destinationId: String? = null
     ): Response<ApiResponse<RestaurantsData>>
+
+
+    @GET("restaurants/search-external")
+    suspend fun searchExternalRestaurants(
+        @Query("destinationId")
+        destinationId: String,
+
+        @Query("limit")
+        limit: Int = 20
+    ): Response<ApiResponse<ExternalRestaurantsData>>
 
     @GET("hotels")
     suspend fun getHotels(
-        @Query("search") search: String? = null,
-        @Query("destination") destinationId: String? = null
+        @Query("search")
+        search: String? = null,
+
+        @Query("destination")
+        destinationId: String? = null
     ): Response<ApiResponse<HotelsData>>
+
 
     @GET("hotels/{hotelId}")
     suspend fun getHotelById(
-        @Path("hotelId") hotelId: String
+        @Path("hotelId")
+        hotelId: String
     ): Response<ApiResponse<ApiHotel>>
+
+
+    @GET("hotels/search-external")
+    suspend fun searchExternalHotels(
+        @Query("destinationId")
+        destinationId: String,
+
+        @Query("checkIn")
+        checkIn: String,
+
+        @Query("checkOut")
+        checkOut: String,
+
+        @Query("adults")
+        adults: Int = 2,
+
+        @Query("limit")
+        limit: Int = 10
+    ): Response<ApiResponse<ExternalHotelsData>>
 
     @POST("flight/search")
     suspend fun searchFlightOffers(
-        @Body request: FlightOfferSearchRequest
+        @Body
+        request: FlightOfferSearchRequest
     ): Response<ApiResponse<FlightOfferSearchData>>
+
 
     @POST("flight/select")
     suspend fun selectFlightOffer(
-        @Body request: FlightOfferSelectRequest
+        @Body
+        request: FlightOfferSelectRequest
     ): Response<ApiResponse<ApiFlightOffer>>
 
 
     @GET("flight/{flightOfferId}/booking-details")
     suspend fun getFlight(
-        @Path("flightOfferId") flightOfferId: String
+        @Path("flightOfferId")
+        flightOfferId: String
     ): Response<ApiResponse<ApiFlightOffer>>
 
 
     @GET("flight/{flightOfferId}/booking-url")
     suspend fun getFlightBookingUrl(
-        @Path("flightOfferId") flightOfferId: String
+        @Path("flightOfferId")
+        flightOfferId: String
     ): Response<ApiResponse<FlightBookingUrlData>>
 
     @POST("bookings")
     suspend fun createBooking(
-        @Body request: CreateBookingRequest
+        @Body
+        request: CreateBookingRequest
     ): Response<ApiResponse<ApiBooking>>
+
 
     @POST("bookings/{bookingId}/redirect")
     suspend fun redirectBooking(
-        @Path("bookingId") bookingId: String
+        @Path("bookingId")
+        bookingId: String
     ): Response<ApiResponse<BookingRedirectData>>
+
 
     @GET("bookings")
     suspend fun getMyBookings(): Response<ApiResponse<BookingsListData>>
 
+
     @GET("bookings/{bookingId}")
     suspend fun getBookingById(
-        @Path("bookingId") bookingId: String
+        @Path("bookingId")
+        bookingId: String
     ): Response<ApiResponse<ApiBooking>>
+
 
     @GET("bookings/search")
     suspend fun searchBookings(
-        @Query("keyword") keyword: String
+        @Query("keyword")
+        keyword: String
     ): Response<ApiResponse<List<ApiBooking>>>
+
 
     @GET("bookings/filter")
     suspend fun filterBookings(
-        @QueryMap filters: Map<String, String>
+        @QueryMap
+        filters: Map<String, String>
     ): Response<ApiResponse<List<ApiBooking>>>
-
-
     @POST("trips")
     suspend fun createTrip(
-        @Body request: CreateTripRequest
+        @Body
+        request: CreateTripRequest
     ): Response<ApiResponse<ApiTrip>>
+
 
     @GET("trips")
     suspend fun getTrips(): Response<ApiResponse<JsonElement>>
 
+
     @GET("trips/{tripId}")
     suspend fun getTripById(
-        @Path("tripId") tripId: String
+        @Path("tripId")
+        tripId: String
     ): Response<ApiResponse<ApiTrip>>
-
-    @GET("hotels/search-external")
-    suspend fun searchExternalHotels(
-        @Query("destinationId") destinationId: String,
-        @Query("checkIn") checkIn: String,
-        @Query("checkOut") checkOut: String,
-        @Query("adults") adults: Int = 2,
-        @Query("limit") limit: Int = 10
-    ): Response<ApiResponse<ExternalHotelsData>>
-
-    @GET("restaurants/search-external")
-    suspend fun searchExternalRestaurants(
-        @Query("destinationId") destinationId: String,
-        @Query("limit") limit: Int = 20
-    ): Response<ApiResponse<ExternalRestaurantsData>>
 }
-
-

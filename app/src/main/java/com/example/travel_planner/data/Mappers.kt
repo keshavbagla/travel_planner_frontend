@@ -8,30 +8,163 @@ import com.example.travel_planner.model.Restaurant
 import kotlin.math.roundToInt
 
 private fun String.titleCaseWords(): String =
-    replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+    replace("_", " ")
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .joinToString(" ") {
+            it.replaceFirstChar { char ->
+                char.uppercase()
+            }
+        }
 
 fun ApiDestination.toUiModel(): Destination {
-    val seed = slug ?: id.ifBlank { name }
+    val destinationId = id.ifBlank {
+        geoapifyPlaceId.orEmpty()
+    }
+
+    val seed = slug
+        ?: destinationId
+            .ifBlank { name }
+            .replace(" ", "-")
+
+    val generatedDescription = buildString {
+
+        if (name.isNotBlank()) {
+            append(name)
+        }
+
+        val locationParts = listOfNotNull(
+            city?.takeIf { it.isNotBlank() },
+            state?.takeIf { it.isNotBlank() },
+            country?.takeIf { it.isNotBlank() }
+        ).distinct()
+
+        if (locationParts.isNotEmpty()) {
+            if (isNotEmpty()) {
+                append(" is located in ")
+            }
+
+            append(locationParts.joinToString(", "))
+            append(".")
+        }
+
+        if (!famousFor.isNullOrEmpty()) {
+            append(" It is famous for ")
+            append(
+                famousFor
+                    .take(5)
+                    .joinToString(", ")
+            )
+            append(".")
+        }
+
+        if (!recommendedDuration?.minDays
+                .toString()
+                .isNullOrBlank()
+        ) {
+            val minDays = recommendedDuration?.minDays
+            val maxDays = recommendedDuration?.maxDays
+
+            if (minDays != null && maxDays != null) {
+                append(" A recommended stay is ")
+                append("$minDays-$maxDays days.")
+            } else if (minDays != null) {
+                append(" A recommended stay is ")
+                append("$minDays days.")
+            }
+        }
+    }.ifBlank {
+        "Explore $name and discover its attractions, activities and local experiences."
+    }
+
 
     return Destination(
-        id = id,
+        id = destinationId,
         name = name,
-        country = country ?: "",
+        slug = slug,
+
+        city = city,
+        state = state,
+        country = country,
+        region = state,
+
+        description = generatedDescription,
+
+        destinationType = destinationType ?: emptyList(),
+
+        travelStyles = emptyList(),
+
+        suitableFor = emptyList(),
+
+        budgetTier = when {
+            isFeatured == true -> "$$$"
+            else -> "$$"
+        },
+
+        seasons = emptyList(),
+
+        placesToVisit = emptyList(),
+
+        activities = emptyList(),
+
+        popularActivities = emptyList(),
+
+        beaches = emptyList(),
+
+        shopping = emptyList(),
+
+        nightlife = emptyList(),
+
+        hotels = emptyList(),
+
+        restaurants = emptyList(),
+
+        famousFor = famousFor ?: emptyList(),
+
+        recommendedDurationText =
+            recommendedDuration?.let { duration ->
+
+                when {
+                    duration.minDays != null &&
+                            duration.maxDays != null -> {
+
+                        "${duration.minDays}-${duration.maxDays} days"
+                    }
+
+                    duration.minDays != null -> {
+                        "${duration.minDays}+ days"
+                    }
+
+                    duration.maxDays != null -> {
+                        "Up to ${duration.maxDays} days"
+                    }
+
+                    else -> null
+                }
+            },
+
+        primaryAirportIata = primaryAirportIata,
         rating = averageRating ?: 0.0,
-        priceTier = if (isFeatured == true) "$$$" else "$$",
-        imageUrl = coverImage?.url ?: "https://picsum.photos/seed/$seed/800/600",
-        description = listOfNotNull(
-            city,
-            state,
-            country
-        ).distinct().joinToString(", "),
-        recommendedDurationText = recommendedDuration?.let { "${it.minDays}-${it.maxDays} days" },
-        primaryAirportIata = primaryAirportIata
+
+        imageUrl = coverImage?.url
+            ?.takeIf { it.isNotBlank() }
+            ?: "https://picsum.photos/seed/$seed/800/600",
+
+        priceTier = when {
+            popularityScore != null &&
+                    popularityScore >= 80 -> "$$$"
+
+            isFeatured == true -> "$$$"
+
+            else -> "$$"
+        }
     )
 }
 
 fun ApiHotel.toUiModel(): Hotel {
+
     val avg = averageRating ?: 0.0
+
     val label = when {
         avg >= 9.0 -> "Wonderful"
         avg >= 8.0 -> "Excellent"
@@ -40,22 +173,45 @@ fun ApiHotel.toUiModel(): Hotel {
         avg > 0.0 -> "Fair"
         else -> "Not yet rated"
     }
+
     return Hotel(
         id = id,
+
         name = name,
-        area = listOfNotNull(city, country).joinToString(", "),
-        rating = if (avg > 0.0) "$avg $label" else label,
+
+        area = listOfNotNull(
+            city,
+            country
+        ).joinToString(", "),
+
+        rating =
+            if (avg > 0.0) {
+                "$avg $label"
+            } else {
+                label
+            },
+
         stars = starRating ?: 0,
-        price = (pricePerNight ?: 0.0).roundToInt(),
+
+        price = (pricePerNight ?: 0.0)
+            .roundToInt(),
+
         currency = currency ?: "USD",
-        amenities = amenities?.takeIf { it.isNotEmpty() }
-            ?.joinToString(" • ") { it.titleCaseWords() }
-            ?: "Amenities not listed"
+
+        amenities =
+            amenities
+                ?.takeIf { it.isNotEmpty() }
+                ?.joinToString(" • ") {
+                    it.titleCaseWords()
+                }
+                ?: "Amenities not listed"
     )
 }
 
 fun ApiRestaurant.toUiModel(): Restaurant {
+
     val cost = averageCostForTwo ?: 0.0
+
     val tier = when {
         cost <= 0 -> "$"
         cost < 500 -> "$"
@@ -63,54 +219,121 @@ fun ApiRestaurant.toUiModel(): Restaurant {
         cost < 3000 -> "$$$"
         else -> "$$$$"
     }
+
     return Restaurant(
+
         id = id,
+
         name = name,
-        cuisine = cuisine?.takeIf { it.isNotEmpty() }?.joinToString(" • ") { it.titleCaseWords() }
-            ?: (restaurantType ?: "Restaurant"),
+
+        cuisine =
+            cuisine
+                ?.takeIf { it.isNotEmpty() }
+                ?.joinToString(" • ") {
+                    it.titleCaseWords()
+                }
+                ?: (restaurantType ?: "Restaurant"),
+
         rating = averageRating ?: 0.0,
+
         priceTier = tier
     )
 }
 
 fun ApiActivity.toUiModel(): Activity {
-    val durationLabel = if (duration != null && durationUnit != null) {
-        "$duration ${durationUnit.lowercase()}"
-    } else {
-        "Duration varies"
-    }
+
+    val durationLabel =
+        if (
+            duration != null &&
+            durationUnit != null
+        ) {
+            "$duration ${durationUnit.lowercase()}"
+        } else {
+            "Duration varies"
+        }
+
     return Activity(
+
         id = id,
+
         name = name,
+
         duration = durationLabel,
-        price = (price ?: 0.0).roundToInt()
+
+        price = (price ?: 0.0)
+            .roundToInt()
     )
 }
 
-private fun extractHHmm(isoTimestamp: String?): String {
-    if (isoTimestamp == null) return "--:--"
-    val tIndex = isoTimestamp.indexOf('T')
-    if (tIndex == -1 || isoTimestamp.length < tIndex + 6) return "--:--"
-    return isoTimestamp.substring(tIndex + 1, tIndex + 6)
-}
+private fun extractHHmm(
+    isoTimestamp: String?
+): String {
 
+    if (isoTimestamp == null) {
+        return "--:--"
+    }
+
+    val tIndex =
+        isoTimestamp.indexOf('T')
+
+    if (
+        tIndex == -1 ||
+        isoTimestamp.length < tIndex + 6
+    ) {
+        return "--:--"
+    }
+
+    return isoTimestamp.substring(
+        tIndex + 1,
+        tIndex + 6
+    )
+}
 fun ApiFlightOffer.toUiModel(): Flight {
-    val airlineName = flights?.firstOrNull()?.airline ?: provider ?: "Unknown airline"
+
+    val airlineName =
+        flights
+            ?.firstOrNull()
+            ?.airline
+            ?: provider
+            ?: "Unknown airline"
+
     val stopsLabel = when (stops) {
+
         null -> ""
+
         0 -> "Non-stop"
+
         1 -> "1 Stop"
+
         else -> "$stops Stops"
     }
+
     return Flight(
+
         id = id,
+
         airline = airlineName,
-        price = (price ?: 0.0).roundToInt(),
-        departTime = extractHHmm(departureTime),
-        departAirport = departureAirport ?: "",
-        arriveTime = extractHHmm(arrivalTime),
-        arriveAirport = arrivalAirport ?: "",
-        duration = durationText ?: "",
+
+        price =
+            (price ?: 0.0)
+                .roundToInt(),
+
+        departTime =
+            extractHHmm(departureTime),
+
+        departAirport =
+            departureAirport ?: "",
+
+        arriveTime =
+            extractHHmm(arrivalTime),
+
+        arriveAirport =
+            arrivalAirport ?: "",
+
+        duration =
+            durationText ?: "",
+
         stopsLabel = stopsLabel
     )
 }
+

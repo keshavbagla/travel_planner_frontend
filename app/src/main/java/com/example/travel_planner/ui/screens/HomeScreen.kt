@@ -48,7 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 fun HomeScreen(
     onSearchDestination: (String) -> Unit = {},
     onCategoryClick: (String) -> Unit = {},
-    onDestinationClick: (String) -> Unit = {}
+    onDestinationClick: (String, String) -> Unit = { _, _ -> }
 ) {
     Column(
         modifier = Modifier
@@ -150,7 +150,7 @@ fun HomeScreen(
                         items(SampleData.popularDestinations) { destination ->
                             DestinationCard(
                                 destination = destination,
-                                onExploreClick = { onDestinationClick(destination.id) }
+                                onExploreClick = { onDestinationClick(destination.id,destination.name) }
                             )
                         }
                     }
