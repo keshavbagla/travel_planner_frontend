@@ -62,7 +62,7 @@ fun DestinationCard(
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 14.sp),
                         color = Navy
                     )
-                    Text(destination.country, style = MaterialTheme.typography.bodySmall, color = Slate)
+                    destination.country?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Slate) }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Icon(Icons.Filled.Star, contentDescription = null, tint = Teal, modifier = Modifier.size(10.dp))

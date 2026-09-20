@@ -119,7 +119,7 @@ fun DestinationDetailsScreen(
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column {
-                                    Text(destination.country.uppercase(), style = MaterialTheme.typography.labelMedium, color = Teal)
+                                    Text((destination.country ?: "").uppercase(), style = MaterialTheme.typography.labelMedium, color = Teal)
                                     Text(destination.name, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Navy)
                                 }
                                 Row(
@@ -139,12 +139,11 @@ fun DestinationDetailsScreen(
                                 }
                             }
                             Text(
-                                destination.description.ifBlank { "No description available yet." },
+                                destination.description?.ifBlank { "No description available yet." } ?: "No description available yet.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Slate
                             )
-                            // <-- added: surfaces real fields (recommended duration, nearest
-                            // airport, famous-for tags) that were fetched but never shown before
+
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 destination.recommendedDurationText?.let {
                                     Text("🗓 $it", style = MaterialTheme.typography.bodySmall, color = Slate)

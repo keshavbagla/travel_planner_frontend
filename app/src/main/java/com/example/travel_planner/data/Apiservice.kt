@@ -14,7 +14,11 @@ interface ApiService {
 
     @GET("destinations/search")
     suspend fun searchDestinations(
-        @Query("keyword") keyword: String
+        @Query("q") query: String,
+        @Query("region") region: String? = null,
+        @Query("budgetTier") budgetTier: String? = null,
+        @Query("season") season: String? = null,
+        @Query("tripType") tripType: String? = null
     ): Response<ApiResponse<DestinationSearchData>>
 
     @GET("destinations/{destinationId}")

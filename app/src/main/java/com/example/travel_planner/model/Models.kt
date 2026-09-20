@@ -1,16 +1,47 @@
 package com.example.travel_planner.model
 
+import com.google.firebase.inappmessaging.model.ImageData
+
+
 data class Destination(
-    val id: String,
-    val name: String,
-    val country: String,
+    val id: String = "",
+    val name: String = "",
+    val slug: String? = null,
+
+    val city: String? = null,
+    val state: String? = null,
+    val country: String? = null,
+    val region: String? = null,
+
+    val description: String? = null,
+
+    val destinationType: List<String> = emptyList(),
+    val travelStyles: List<String> = emptyList(),
+    val suitableFor: List<String> = emptyList(),
+
+    val budgetTier: String? = null,
+    val seasons: List<String> = emptyList(),
+
+    val placesToVisit: List<String> = emptyList(),
+    val activities: List<String> = emptyList(),
+    val popularActivities: List<String> = emptyList(),
+
+    val beaches: List<String> = emptyList(),
+    val shopping: List<String> = emptyList(),
+    val nightlife: List<String> = emptyList(),
+
+    val hotels: List<String> = emptyList(),
+    val restaurants: List<String> = emptyList(),
+
+    val famousFor: List<String> = emptyList(),
+
+    val recommendedDurationText: String? = null,
+    val primaryAirportIata: String? = null,
+
+    val coverImage: ImageData? = null,
     val rating: Double,
     val priceTier: String,
-    val imageUrl: String?,
-    val description: String = "",
-    val primaryAirportIata: String? = null,
-    val recommendedDurationText: String? = null,
-    val famousFor: List<String> = emptyList()
+    val imageUrl: String
 )
 
 data class Attraction(

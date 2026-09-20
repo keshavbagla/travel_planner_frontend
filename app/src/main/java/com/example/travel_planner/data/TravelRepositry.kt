@@ -40,7 +40,12 @@ object TravelRepository {
     suspend fun loadDestinationsUi(
         search: String? = null,
         destinationType: String? = null,
-        country: String? = null
+        country: String? = null,
+        query: String,
+        tripType: String,
+        region: String,
+        budgetTier: String,
+        season: String
     ): List<Destination> {
 
         val trimmedSearch = search?.trim()

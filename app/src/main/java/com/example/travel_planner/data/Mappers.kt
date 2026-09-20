@@ -11,15 +11,22 @@ private fun String.titleCaseWords(): String =
     replace("_", " ").split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
 
 fun ApiDestination.toUiModel(): Destination {
-    val seed = slug ?: id
+    val seed = slug ?: id.ifBlank { name }
+
     return Destination(
         id = id,
         name = name,
         country = country ?: "",
-        rating = 4.5,
+        rating = averageRating ?: 0.0,
         priceTier = if (isFeatured == true) "$$$" else "$$",
-        imageUrl = "https://picsum.photos/seed/$seed/800/600",
-        description = listOfNotNull(city, state, country).distinct().joinToString(", ")
+        imageUrl = coverImage?.url ?: "https://picsum.photos/seed/$seed/800/600",
+        description = listOfNotNull(
+            city,
+            state,
+            country
+        ).distinct().joinToString(", "),
+        recommendedDurationText = recommendedDuration?.let { "${it.minDays}-${it.maxDays} days" },
+        primaryAirportIata = primaryAirportIata
     )
 }
 
