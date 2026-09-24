@@ -39,7 +39,7 @@ sealed class Destination(val route: String) {
 
     data object Otp : Destination("otp/{email}") {
 
-        fun createRoute(email: String) =
+        fun createRoute(email: String): String =
             "otp/${URLEncoder.encode(email, "UTF-8")}"
     }
 
@@ -53,24 +53,34 @@ sealed class Destination(val route: String) {
         fun createRoute(
             query: String = "",
             type: String = ""
-        ) =
+        ): String =
             "destinations_search/" +
                     "${URLEncoder.encode(query.ifBlank { " " }, "UTF-8")}/" +
                     "${URLEncoder.encode(type.ifBlank { " " }, "UTF-8")}"
     }
 
     data object DestinationDetails :
-        Destination("destination_details/{destinationId}") {
+        Destination("destination_details/{destinationId}/{destinationName}") {
 
-        fun createRoute(destinationId: String) =
-            "destination_details/$destinationId"
+        fun createRoute(
+            destinationId: String,
+            destinationName: String
+        ): String {
+            val safeId = destinationId.ifBlank { " " }
+
+            return "destination_details/" +
+                    "${URLEncoder.encode(safeId, "UTF-8")}/" +
+                    "${URLEncoder.encode(destinationName, "UTF-8")}"
+        }
     }
+
     data object Flights :
         Destination("flights")
+
     data object FlightDetails :
         Destination("flight_details/{flightOfferId}") {
 
-        fun createRoute(flightOfferId: String) =
+        fun createRoute(flightOfferId: String): String =
             "flight_details/$flightOfferId"
     }
 
@@ -121,6 +131,8 @@ fun NavGraph(
             restoreState = true
         }
     }
+
+
     val flightsViewModel =
         androidx.lifecycle.viewmodel.compose.viewModel<FlightsViewModel>()
 
@@ -163,6 +175,7 @@ fun NavGraph(
                     )
                 }
 
+
                 composable(
                     Destination.SignUp.route
                 ) {
@@ -181,6 +194,7 @@ fun NavGraph(
                         }
                     )
                 }
+
 
                 composable(
                     Destination.Otp.route
@@ -218,6 +232,7 @@ fun NavGraph(
                     )
                 }
 
+
                 composable(
                     Destination.Home.route
                 ) {
@@ -253,17 +268,21 @@ fun NavGraph(
                             )
                         },
 
-                        onDestinationClick = { destinationId, destinationName->
+                        onDestinationClick = {
+                                destinationId,
+                                destinationName ->
 
                             navController.navigate(
                                 Destination.DestinationDetails
                                     .createRoute(
-                                        destinationId
+                                        destinationId = destinationId,
+                                        destinationName = destinationName
                                     )
                             )
                         }
                     )
                 }
+
 
                 composable(
                     Destination.AiPlanner.route
@@ -272,6 +291,7 @@ fun NavGraph(
                     AiPlannerScreen()
                 }
 
+
                 composable(
                     Destination.Destinations.route
                 ) {
@@ -279,17 +299,20 @@ fun NavGraph(
                     DestinationsScreen(
 
                         onDestinationClick = {
-                                destinationId, destinationName->
+                                destinationId,
+                                destinationName ->
 
                             navController.navigate(
                                 Destination.DestinationDetails
                                     .createRoute(
-                                        destinationId
+                                        destinationId = destinationId,
+                                        destinationName = destinationName
                                     )
                             )
                         }
                     )
                 }
+
 
                 composable(
                     Destination.DestinationsSearch.route
@@ -328,17 +351,20 @@ fun NavGraph(
                         initialDestinationType = type,
 
                         onDestinationClick = {
-                                destinationId, destinationName->
+                                destinationId,
+                                destinationName ->
 
                             navController.navigate(
                                 Destination.DestinationDetails
                                     .createRoute(
-                                        destinationId
+                                        destinationId = destinationId,
+                                        destinationName = destinationName
                                     )
                             )
                         }
                     )
                 }
+
 
                 composable(
                     Destination.DestinationDetails.route
@@ -347,14 +373,37 @@ fun NavGraph(
                     val destinationId =
                         backStackEntry
                             .arguments
-                            ?.getString(
-                                "destinationId"
-                            )
+                            ?.getString("destinationId")
+                            ?.let {
+                                URLDecoder.decode(
+                                    it,
+                                    "UTF-8"
+                                )
+                            }
+                            ?.trim()
+                            ?.takeUnless {
+                                it.isBlank()
+                            }
+                            .orEmpty()
+
+                    val destinationName =
+                        backStackEntry
+                            .arguments
+                            ?.getString("destinationName")
+                            ?.let {
+                                URLDecoder.decode(
+                                    it,
+                                    "UTF-8"
+                                )
+                            }
+                            ?.trim()
                             .orEmpty()
 
                     DestinationDetailsScreen(
 
                         destinationId = destinationId,
+
+                        destinationName = destinationName,
 
                         onBackClick = {
                             navController.popBackStack()
@@ -384,6 +433,7 @@ fun NavGraph(
                     )
                 }
 
+
                 composable(
                     Destination.Flights.route
                 ) {
@@ -407,6 +457,7 @@ fun NavGraph(
                         }
                     )
                 }
+
 
                 composable(
                     Destination.FlightDetails.route
@@ -432,6 +483,7 @@ fun NavGraph(
                     )
                 }
 
+
                 composable(
                     Destination.Hotels.route
                 ) {
@@ -443,6 +495,7 @@ fun NavGraph(
                     )
                 }
 
+
                 composable(
                     Destination.Restaurants.route
                 ) {
@@ -453,6 +506,7 @@ fun NavGraph(
                         }
                     )
                 }
+
 
                 composable(
                     Destination.Activities.route
@@ -466,6 +520,7 @@ fun NavGraph(
                 }
             }
         }
+
 
         if (currentRoute in bottomNavRoutes) {
 

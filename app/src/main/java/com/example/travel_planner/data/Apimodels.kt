@@ -77,12 +77,18 @@ data class CoverImage(
 )
 
 data class ApiDestination(
-    @SerializedName("id")
-    val id: String = "",
 
-    // Geoapify ID
+    @SerializedName("_id")
+    val databaseId: String? = null,
+
+    @SerializedName("id")
+    val directId: String? = null,
+
     @SerializedName("geoapifyPlaceId")
     val geoapifyPlaceId: String? = null,
+
+    @SerializedName("openTripMapXid")
+    val openTripMapXid: String? = null,
 
     @SerializedName("name")
     val name: String = "",
@@ -99,8 +105,44 @@ data class ApiDestination(
     @SerializedName("slug")
     val slug: String? = null,
 
+    @SerializedName("description")
+    val description: String? = null,
+
     @SerializedName("destinationType")
-    val destinationType: List<String>? = null,
+    val destinationType: List<String> = emptyList(),
+
+    @SerializedName("seasons")
+    val seasons: List<String> = emptyList(),
+
+    @SerializedName("placesToVisit")
+    val placesToVisit: List<String> = emptyList(),
+
+    @SerializedName("beaches")
+    val beaches: List<String> = emptyList(),
+
+    @SerializedName("famousFor")
+    val famousFor: List<String> = emptyList(),
+
+    @SerializedName("popularActivities")
+    val popularActivities: List<String> = emptyList(),
+
+    @SerializedName("activities")
+    val activities: List<String> = emptyList(),
+
+    @SerializedName("hotels")
+    val hotels: List<String> = emptyList(),
+
+    @SerializedName("restaurants")
+    val restaurants: List<String> = emptyList(),
+
+    @SerializedName("nightlife")
+    val nightlife: List<String> = emptyList(),
+
+    @SerializedName("shopping")
+    val shopping: List<String> = emptyList(),
+
+    @SerializedName("searchKeywords")
+    val searchKeywords: List<String> = emptyList(),
 
     @SerializedName("isFeatured")
     val isFeatured: Boolean? = null,
@@ -138,12 +180,16 @@ data class ApiDestination(
     @SerializedName("coverImage")
     val coverImage: CoverImage? = null,
 
-    @SerializedName("famousFor")
-    val famousFor: List<String>? = null,
-
     @SerializedName("isActive")
     val isActive: Boolean? = null
 ) {
+    val id: String
+        get() =
+            databaseId
+                ?: directId
+                ?: geoapifyPlaceId
+                ?: openTripMapXid
+                ?: ""
 }
 
 data class DestinationsData(

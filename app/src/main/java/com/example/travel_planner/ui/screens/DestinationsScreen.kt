@@ -150,21 +150,11 @@ fun DestinationsScreen(
             )
         }
     }
-
-
-    // ========================================================
-    // UI
-    // ========================================================
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
     ) {
-
-        // ====================================================
-        // SEARCH + FILTERS
-        // ====================================================
 
         Column(
             modifier = Modifier
@@ -391,9 +381,10 @@ fun DestinationsScreen(
 
                         items(
                             items = state.data,
-
-                            key = {
-                                it.id
+                            key = { destination ->
+                                destination.id.ifBlank {
+                                    destination.name
+                                }
                             }
                         ) { destination ->
 
@@ -401,17 +392,10 @@ fun DestinationsScreen(
                                 destination = destination,
 
                                 onClick = {
-
-                                    val destinationId =
-                                        destination.id
-
-                                    if (destinationId.isNotBlank()) {
-
-                                        onDestinationClick(
-                                            destinationId,
-                                            destination.name
-                                        )
-                                    }
+                                    onDestinationClick(
+                                        destination.id,
+                                        destination.name
+                                    )
                                 }
                             )
                         }
@@ -419,10 +403,10 @@ fun DestinationsScreen(
                 }
             }
 
-            else -> Unit
+            else -> {}
+        }
         }
     }
-}
 
 private suspend fun loadDestinationResults(
     query: String,

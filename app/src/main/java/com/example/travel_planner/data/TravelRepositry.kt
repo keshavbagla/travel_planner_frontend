@@ -399,11 +399,41 @@ object TravelRepository {
         )
     }
     suspend fun loadDestinationUi(
-        id: String
-    ): Destination =
-        unwrap(
-            api.getDestinationById(id)
-        ).toUiModel()
+        id: String,
+        name: String
+    ): Destination {
+
+        if (id.isNotBlank()) {
+            try {
+                return unwrap(
+                    api.getDestinationById(id)
+                ).toUiModel()
+            } catch (_: Exception) {
+                // Fall back to name search
+            }
+        }
+
+        val cleanName = name.trim()
+
+        if (cleanName.isBlank()) {
+            throw IOException(
+                "Destination name is required"
+            )
+        }
+
+        val searchResult = searchDestinations(
+            keyword = cleanName
+        )
+
+        val destination =
+            searchResult.results.firstOrNull()
+                ?: throw IOException(
+                    "Destination '$cleanName' not found"
+                )
+
+        return destination.toUiModel()
+    }
+
 
     suspend fun loadActivitiesUi(
         destinationId: String? = null
@@ -411,31 +441,38 @@ object TravelRepository {
 
         return unwrap(
             api.getActivities(
-                destinationId = destinationId?.takeIf {
-                    it.isNotBlank()
-                }
+                destinationId = destinationId
+                    ?.takeIf { it.isNotBlank() }
             )
         ).activities.map {
             it.toUiModel()
         }
     }
 
+
     suspend fun loadHotelsUi(
         search: String? = null,
         destinationId: String? = null
     ): List<Hotel> {
+
         return getHotels(
             search = search,
             destinationId = destinationId
-        ).hotels.map { it.toUiModel() }
+        ).hotels.map {
+            it.toUiModel()
+        }
     }
+
 
     suspend fun loadRestaurantsUi(
         destinationId: String? = null
     ): List<Restaurant> {
+
         return getRestaurants(
             destinationId = destinationId
-        ).restaurants.map { it.toUiModel() }
+        ).restaurants.map {
+            it.toUiModel()
+        }
     }
 
     suspend fun searchExternalRestaurants(
@@ -456,5 +493,6 @@ object TravelRepository {
             )
         )
     }
+
 
 }

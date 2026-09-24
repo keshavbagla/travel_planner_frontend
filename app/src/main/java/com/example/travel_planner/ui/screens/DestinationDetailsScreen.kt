@@ -21,11 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,35 +54,51 @@ import com.example.travel_planner.ui.viewmodel.ResourceViewModel
 import com.example.travel_planner.ui.viewmodel.UiState
 import java.util.Locale
 
+
 @Composable
 fun DestinationDetailsScreen(
     destinationId: String,
+    destinationName: String = "",
     onBackClick: () -> Unit = {},
     onPlanTripClick: () -> Unit = {},
     onViewHotelsClick: () -> Unit = {},
     onViewRestaurantsClick: () -> Unit = {},
     onViewActivitiesClick: () -> Unit = {},
 
-    detailsViewModel: ResourceViewModel<Destination> = viewModel<ResourceViewModel<Destination>>(
-        key = "destinationDetails-$destinationId",
-        factory = viewModelFactory {
-            initializer<ResourceViewModel<Destination>> {
-                ResourceViewModel<Destination> {
-                    TravelRepository.loadDestinationUi(destinationId)
+    detailsViewModel: ResourceViewModel<Destination> =
+        viewModel<ResourceViewModel<Destination>>(
+            key = "destinationDetails-$destinationId-$destinationName",
+            factory = viewModelFactory {
+
+                initializer<ResourceViewModel<Destination>> {
+
+                    ResourceViewModel<Destination> {
+
+                        TravelRepository.loadDestinationUi(
+                            id = destinationId,
+                            name = destinationName
+                        )
+                    }
                 }
             }
-        }
-    ),
+        ),
 
     activitiesViewModel: ResourceViewModel<List<Activity>> =
         viewModel<ResourceViewModel<List<Activity>>>(
-            key = "destinationActivities-$destinationId",
+            key = "destinationActivities-$destinationId-$destinationName",
             factory = viewModelFactory {
+
                 initializer<ResourceViewModel<List<Activity>>> {
+
                     ResourceViewModel<List<Activity>> {
-                        TravelRepository.loadActivitiesUi(
-                            destinationId = destinationId
-                        )
+
+                        if (destinationId.isBlank()) {
+                            emptyList()
+                        } else {
+                            TravelRepository.loadActivitiesUi(
+                                destinationId = destinationId
+                            )
+                        }
                     }
                 }
             }
@@ -160,7 +176,8 @@ fun DestinationDetailsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement =
+                                    Arrangement.SpaceBetween
                             ) {
 
                                 CircleIconButton(
@@ -170,8 +187,7 @@ fun DestinationDetailsScreen(
 
                                 CircleIconButton(
                                     icon = Icons.Filled.FavoriteBorder,
-                                    onClick = {
-                                    }
+                                    onClick = {}
                                 )
                             }
 
@@ -211,6 +227,7 @@ fun DestinationDetailsScreen(
                             }
                         }
                     }
+
                     item {
 
                         Column(
@@ -220,13 +237,16 @@ fun DestinationDetailsScreen(
                                     horizontal = 16.dp,
                                     vertical = 16.dp
                                 ),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                            verticalArrangement =
+                                Arrangement.spacedBy(14.dp)
                         ) {
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                horizontalArrangement =
+                                    Arrangement.SpaceBetween,
+                                verticalAlignment =
+                                    Alignment.CenterVertically
                             ) {
 
                                 Column(
@@ -238,10 +258,13 @@ fun DestinationDetailsScreen(
                                         ?.let {
 
                                             Text(
-                                                text = it.uppercase(Locale.getDefault()),
+                                                text = it.uppercase(
+                                                    Locale.getDefault()
+                                                ),
                                                 color = PrimaryBlue,
                                                 fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
+                                                fontWeight =
+                                                    FontWeight.Bold
                                             )
                                         }
 
@@ -249,7 +272,8 @@ fun DestinationDetailsScreen(
                                         text = destination.name,
                                         color = Navy,
                                         fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight =
+                                            FontWeight.Bold
                                     )
                                 }
 
@@ -263,17 +287,20 @@ fun DestinationDetailsScreen(
                                     ?.takeIf { it.isNotBlank() }
                                     ?: "Discover the highlights, activities and places to visit in ${destination.name}.",
                                 color = Slate,
-                                style = MaterialTheme.typography.bodyMedium
+                                style =
+                                    MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
+
                     item {
 
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement =
+                                Arrangement.spacedBy(10.dp)
                         ) {
 
                             destination.recommendedDurationText?.let {
@@ -295,6 +322,7 @@ fun DestinationDetailsScreen(
                             }
                         }
                     }
+
                     if (destination.destinationType.isNotEmpty()) {
 
                         item {
@@ -306,21 +334,26 @@ fun DestinationDetailsScreen(
                                         horizontal = 16.dp,
                                         vertical = 16.dp
                                     ),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                verticalArrangement =
+                                    Arrangement.spacedBy(8.dp)
                             ) {
 
                                 Text(
                                     text = "Travel Type",
                                     color = Navy,
                                     fontSize = 17.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight =
+                                        FontWeight.Bold
                                 )
 
                                 LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement =
+                                        Arrangement.spacedBy(8.dp)
                                 ) {
 
-                                    items(destination.destinationType) { type ->
+                                    items(
+                                        destination.destinationType
+                                    ) { type ->
 
                                         TagChip(
                                             text = type
@@ -334,6 +367,7 @@ fun DestinationDetailsScreen(
                             }
                         }
                     }
+
                     if (destination.famousFor.isNotEmpty()) {
 
                         item {
@@ -345,9 +379,6 @@ fun DestinationDetailsScreen(
                         }
                     }
 
-                    /*
-                     * PLACES TO VISIT
-                     */
                     if (destination.placesToVisit.isNotEmpty()) {
 
                         item {
@@ -358,6 +389,7 @@ fun DestinationDetailsScreen(
                             )
                         }
                     }
+
                     if (destination.popularActivities.isNotEmpty()) {
 
                         item {
@@ -368,6 +400,7 @@ fun DestinationDetailsScreen(
                             )
                         }
                     }
+
                     item {
 
                         Column(
@@ -377,7 +410,8 @@ fun DestinationDetailsScreen(
                                     horizontal = 16.dp,
                                     vertical = 8.dp
                                 ),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement =
+                                Arrangement.spacedBy(10.dp)
                         ) {
 
                             Text(
@@ -389,7 +423,8 @@ fun DestinationDetailsScreen(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(10.dp)
                             ) {
 
                                 QuickLinkButton(
@@ -412,13 +447,15 @@ fun DestinationDetailsScreen(
                             }
                         }
                     }
+
                     item {
 
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement =
+                                Arrangement.spacedBy(10.dp)
                         ) {
 
                             Text(
@@ -442,7 +479,8 @@ fun DestinationDetailsScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(20.dp),
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment =
+                                            Alignment.Center
                                     ) {
 
                                         CircularProgressIndicator(
@@ -480,12 +518,12 @@ fun DestinationDetailsScreen(
                                     } else {
 
                                         LazyRow(
-                                            contentPadding = PaddingValues(
-                                                horizontal = 16.dp
-                                            ),
-                                            horizontalArrangement = Arrangement.spacedBy(
-                                                12.dp
-                                            )
+                                            contentPadding =
+                                                PaddingValues(
+                                                    horizontal = 16.dp
+                                                ),
+                                            horizontalArrangement =
+                                                Arrangement.spacedBy(12.dp)
                                         ) {
 
                                             items(actState.data) { activity ->
@@ -514,8 +552,10 @@ fun DestinationDetailsScreen(
                             horizontal = 20.dp,
                             vertical = 14.dp
                         ),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement =
+                        Arrangement.SpaceBetween,
+                    verticalAlignment =
+                        Alignment.CenterVertically
                 ) {
 
                     Column {
@@ -560,6 +600,7 @@ fun DestinationDetailsScreen(
     }
 }
 
+
 @Composable
 private fun LoadingDestination() {
 
@@ -585,6 +626,7 @@ private fun LoadingDestination() {
         }
     }
 }
+
 
 @Composable
 private fun DestinationError(
@@ -664,6 +706,8 @@ private fun DestinationError(
         }
     }
 }
+
+
 @Composable
 private fun RatingBadge(
     rating: Double
@@ -713,6 +757,7 @@ private fun RatingBadge(
     }
 }
 
+
 @Composable
 private fun InfoChip(
     title: String,
@@ -742,6 +787,7 @@ private fun InfoChip(
     }
 }
 
+
 @Composable
 private fun TagChip(
     text: String
@@ -766,6 +812,7 @@ private fun TagChip(
     }
 }
 
+
 @Composable
 private fun InformationSection(
     title: String,
@@ -779,7 +826,8 @@ private fun InformationSection(
                 horizontal = 16.dp,
                 vertical = 10.dp
             ),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement =
+            Arrangement.spacedBy(8.dp)
     ) {
 
         Text(
@@ -792,8 +840,10 @@ private fun InformationSection(
         items.take(6).forEach { item ->
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalAlignment =
+                    Alignment.CenterVertically,
+                horizontalArrangement =
+                    Arrangement.spacedBy(8.dp)
             ) {
 
                 Box(
@@ -812,6 +862,8 @@ private fun InformationSection(
         }
     }
 }
+
+
 @Composable
 private fun QuickLinkButton(
     label: String,
@@ -838,6 +890,8 @@ private fun QuickLinkButton(
         )
     }
 }
+
+
 @Composable
 private fun CircleIconButton(
     icon: ImageVector,
@@ -865,6 +919,8 @@ private fun CircleIconButton(
         )
     }
 }
+
+
 @Composable
 private fun ActivityPreviewCard(
     activity: Activity
@@ -876,7 +932,8 @@ private fun ActivityPreviewCard(
             .clip(RoundedCornerShape(14.dp))
             .background(White)
             .padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement =
+            Arrangement.spacedBy(8.dp)
     ) {
 
         Box(
